@@ -10,18 +10,25 @@ export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: "Credentials",
+      // Updated to accept 'identifier' from your AuthModal
       credentials: {
-        email: {},
-        password: {},
+        identifier: { label: "Email or Username", type: "text" },
+        password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null
+        if (!credentials?.identifier || !credentials?.password) return null
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
+        // Look for user where email OR username matches the identifier
+        const user = await prisma.user.findFirst({
+          where: {
+            OR: [
+              { email: credentials.identifier },
+              { username: credentials.identifier }
+            ]
+          },
         })
 
-        if (!user) return null
+        if (!user || !user.password) return null
 
         const passwordMatch = await bcrypt.compare(
           credentials.password,
@@ -30,7 +37,14 @@ export const authOptions: NextAuthOptions = {
 
         if (!passwordMatch) return null
 
-        return user
+        // Return the user object for the JWT token
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          username: user.username,
+          role: user.role,
+        }
       },
     }),
   ],
@@ -38,13 +52,25 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
   },
   callbacks: {
-    async session({ session, token }) {
-      // Add the user id to session object
-      if (session.user) {
-        session.user.id = token.sub! // token.sub is the user.id
+    async jwt({ token, user }) {
+      // Pass the username and id from the user object to the token
+      if (user) {
+        token.id = user.id;
+        token.username = (user as any).username;
       }
-      return session
+      return token;
     },
+    async session({ session, token }) {
+      // Make id and username available in the session on the frontend
+      if (session.user) {
+        session.user.id = token.id as string;
+        (session.user as any).username = token.username as string;
+      }
+      return session;
+    },
+  },
+  pages: {
+    signIn: '/', // Optional: redirects to home where your modal is
   },
   secret: process.env.NEXTAUTH_SECRET,
 }

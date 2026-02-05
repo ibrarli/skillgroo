@@ -1,69 +1,92 @@
-import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "../auth/[...nextauth]/route"
-import { prisma } from "@/lib/prisma"
+import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../auth/[...nextauth]/route";
+import { prisma } from "@/lib/prisma";
+import { v2 as cloudinary } from "cloudinary";
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 export async function GET() {
-  const session = await getServerSession(authOptions)
-  if (!session)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  // fetch the profile of the logged-in user
-  const profile = await prisma.profile.findUnique({
-    where: { userId: session.user.id },
-  })
+  try {
+    // Optimized: Get profile and portfolio items in ONE single query
+    const profileWithPortfolio = await prisma.profile.findUnique({
+      where: { userId: session.user.id },
+      include: {
+        portfolio: {
+          orderBy: { createdAt: "desc" },
+        },
+      },
+    });
 
-  if (!profile)
-    return NextResponse.json({ error: "Profile not found" }, { status: 404 })
+    if (!profileWithPortfolio) return NextResponse.json([]);
 
-  const portfolio = await prisma.portfolio.findMany({
-    where: { profileId: profile.id }, // only this user's portfolio
-    orderBy: { createdAt: "desc" },
-  })
-
-  return NextResponse.json(portfolio)
+    return NextResponse.json(profileWithPortfolio.portfolio);
+  } catch (error) {
+    console.error("PORTFOLIO_GET_ERROR", error);
+    return NextResponse.json({ error: "Database timeout or error" }, { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions)
-  if (!session)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const profile = await prisma.profile.findUnique({
-    where: { userId: session.user.id },
-  })
+    const data = await req.formData();
+    
+    // Parse values safely
+    const title = data.get("title") as string;
+    const description = data.get("description") as string;
+    const hours = Number(data.get("hours") || 0);
+    const rate = Number(data.get("rate") || 0);
+    const startDate = data.get("startDate") as string;
+    const endDate = data.get("endDate") as string;
+    const imageFile = data.get("image") as File | null;
 
-  if (!profile)
-    return NextResponse.json({ error: "Profile not found" }, { status: 404 })
+    // We still need the profile ID to link the portfolio item
+    const profile = await prisma.profile.findUnique({
+      where: { userId: session.user.id },
+      select: { id: true } // Only fetch ID to save resources
+    });
 
-  const {
-    title,
-    description,
-    projectImage,
-    hours,
-    rate,
-    startDate,
-    endDate,
-  } = await req.json()
+    if (!profile) return NextResponse.json({ error: "Profile not found" }, { status: 404 });
 
-  if (!title || !description || !hours || !rate || !startDate)
-    return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+    let projectImageUrl = "";
+    if (imageFile && imageFile.size > 0) {
+      const arrayBuffer = await imageFile.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      const uploadResponse: any = await new Promise((resolve, reject) => {
+        cloudinary.uploader.upload_stream({ folder: "portfolios" }, (err, res) => {
+          if (err) reject(err); else resolve(res);
+        }).end(buffer);
+      });
+      projectImageUrl = uploadResponse.secure_url;
+    }
 
-  const cost = hours * rate
+    const portfolioEntry = await prisma.portfolio.create({
+      data: {
+        title,
+        description,
+        hours,
+        rate,
+        cost: hours * rate,
+        startDate: new Date(startDate),
+        endDate: endDate ? new Date(endDate) : null,
+        projectImage: projectImageUrl,
+        profileId: profile.id,
+      },
+    });
 
-  const portfolio = await prisma.portfolio.create({
-    data: {
-      profileId: profile.id, // link directly to this user's profile
-      title,
-      description,
-      projectImage,
-      hours,
-      rate,
-      cost,
-      startDate: new Date(startDate),
-      endDate: endDate ? new Date(endDate) : null,
-    },
-  })
-
-  return NextResponse.json(portfolio)
+    return NextResponse.json(portfolioEntry);
+  } catch (error) {
+    console.error("POST_ERROR", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

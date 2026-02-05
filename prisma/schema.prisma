@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider   = "prisma-client-js"
+  engineType = "library"
 }
 
 datasource db {
@@ -8,108 +9,143 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
+  username  String   @unique
   name      String?
   email     String   @unique
   password  String
   role      Role     @default(CUSTOMER)
   profile   Profile?
-  createdAt DateTime @default(now())
+  
+  // Relations
+  earnings      Earnings?
+  transactions  Transaction[]
+  customerOrders Order[]        @relation("CustomerOrders")
+  providerOrders Order[]        @relation("ProviderOrders")
+  notifications  Notification[]
+  notificationsEnabled Boolean  @default(true)
+  createdAt     DateTime        @default(now())
 }
 
 model Profile {
   id        String   @id @default(cuid())
   userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  
   title     String?
   about     String?
   location  String?
-  image     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user        User         @relation(fields: [userId], references: [id])
+  image     String?  // This is your profile picture
+  
+  // Pluralized for consistency
   gigs        Gig[]
   experiences Experience[]
   educations  Education[]
   skills      Skill[]
   reviews     Review[]
   portfolio   Portfolio[]
-
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Experience {
-  id          String    @id @default(cuid())
+  id          String   @id @default(cuid())
   title       String
   company     String
-  description String
-  from        DateTime
-  to          DateTime?
-  present     Boolean   @default(false)
+  description String   @db.Text // Use Text for longer descriptions
+  
+  // Better naming for frontend consistency
+  startDate   DateTime?
+  endDate     DateTime?
+  current     Boolean  @default(false)
 
-  profile   Profile @relation(fields: [profileId], references: [id])  
-  profileId String
+  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  profileId   String
 }
 
 model Education {
-  id          String    @id @default(cuid())
+  id          String   @id @default(cuid())
   degree      String
   institution String
-  from        DateTime
-  to          DateTime?
-  present     Boolean   @default(false)
+  
+  // Better naming for frontend consistency
+  startDate   DateTime?
+  endDate     DateTime?
+  current     Boolean  @default(false)
 
-  profile   Profile @relation(fields: [profileId], references: [id])
-  profileId String
+  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  profileId   String
 }
 
 model Skill {
-  id    String @id @default(cuid())
-  name  String
-  level Int
-
-  profile   Profile @relation(fields: [profileId], references: [id])
+  id        String   @id @default(cuid())
+  name      String
+  level     Int      @default(1) // 1-5 or 1-100
+  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
   profileId String
 }
 
 model Portfolio {
+  id           String    @id @default(cuid())
+  title        String
+  description  String    @db.Text
+  projectImage String?
+  hours        Int?      // Made optional in case it's a fixed project
+  rate         Float?    // Made optional
+  cost         Float?    // Made optional
+  startDate    DateTime
+  endDate      DateTime?
+  
+  profile      Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  profileId    String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Gig {
   id          String   @id @default(cuid())
+  title       String
+  description String
+  price       Float
+  location    String
+  category    String?
+  status      String?
+  image       String?
+  
+  // Analytics Fields
+  totalViews  Int      @default(0)
+  totalClicks Int      @default(0)
+  impressions Impression[]
+  clicks      Click[]
+
   profile     Profile  @relation(fields: [profileId], references: [id])
   profileId   String
 
-  title       String
-  description String
-  projectImage String?   // optional image URL
-  hours       Int
-  rate        Float
-  cost        Float      // calculated: hours * rate
-  startDate   DateTime
-  endDate     DateTime?
+  reviews     Review[]
+  orders      Order[]
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
 
-model Gig {
-  id          String   @id @default(uuid())
-  title       String
-  description String
-  price       Float
-  location    String
-  category    String?   // optional category for filtering
-  status      String?   // optional status: active, completed, etc.
-  image       String?   // optional gig image
+model Impression {
+  id        String   @id @default(cuid())
+  gigId     String
+  gig       Gig      @relation(fields: [gigId], references: [id])
+  createdAt DateTime @default(now())
+}
 
-  profile     Profile   @relation(fields: [profileId], references: [id])
-  profileId   String
-
-  reviews     Review[]  // relation to reviews
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+model Click {
+  id        String   @id @default(cuid())
+  gigId     String
+  gig       Gig      @relation(fields: [gigId], references: [id])
+  createdAt DateTime @default(now())
 }
 
 model Review {
-  id         String   @id @default(uuid())
-  rating     Int      // 1-5 stars
+  id         String   @id @default(cuid())
+  rating     Int
   comment    String?
   gig        Gig      @relation(fields: [gigId], references: [id])
   gigId      String
@@ -118,7 +154,56 @@ model Review {
   createdAt  DateTime @default(now())
 }
 
+model Order {
+  id         String   @id @default(cuid())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  status     String   @default("pending") // "pending", "completed", "cancelled"
+  totalPrice Float
+
+  gigId      String
+  gig        Gig      @relation(fields: [gigId], references: [id])
+
+  customerId String
+  customer   User     @relation("CustomerOrders", fields: [customerId], references: [id])
+
+  providerId String
+  provider   User     @relation("ProviderOrders", fields: [providerId], references: [id])
+}
+
 enum Role {
   WORKER
   CUSTOMER
+}
+
+model Earnings {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id])
+  totalBalance  Float    @default(0.0)
+  withdrawn     Float    @default(0.0)
+  pendingAmount Float    @default(0.0)
+  lastUpdated   DateTime @default(now())
+}
+
+model Transaction {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  amount      Float
+  type        String   
+  status      String   
+  description String
+  createdAt   DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  title     String
+  message   String
+  link      String?  // e.g., "/orders"
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
 }
