@@ -19,6 +19,7 @@ export async function GET() {
       skills: true,
       gigs: true,
       portfolio: true,
+      reviews: true, 
     },
   });
 
@@ -34,31 +35,34 @@ export async function PATCH(req: NextRequest) {
 
     const data = await req.formData();
     
-    // Extract text fields for User table
+    // 1. Extract Fields
     const name = data.get("name") as string | null;
     const username = data.get("username") as string | null;
-
-    // Extract text fields for Profile table
     const title = data.get("title") as string | null;
     const about = data.get("about") as string | null;
     const location = data.get("location") as string | null;
     const imageFile = data.get("image") as File | null;
+    
+    // 2. Safe JSON Parsing for Languages
+    let languages = undefined;
+    const languagesRaw = data.get("languages") as string | null;
+    if (languagesRaw) {
+      try {
+        languages = JSON.parse(languagesRaw);
+      } catch (e) {
+        console.error("Language parse error:", e);
+      }
+    }
 
+    // 3. Image Upload logic
     let imageUrl = undefined;
     if (imageFile && imageFile.size > 0) {
       imageUrl = await uploadImage(imageFile) as string;
     }
 
-    // Prepare update payload for the Profile
-    const profilePayload: any = {};
-    if (title !== null) profilePayload.title = title;
-    if (about !== null) profilePayload.about = about;
-    if (location !== null) profilePayload.location = location;
-    if (imageUrl) profilePayload.image = imageUrl;
-
-    // Use a Transaction to update both tables simultaneously
+    // 4. Database Transaction
     const result = await prisma.$transaction(async (tx) => {
-      // 1. Update User Record (Name and Username)
+      // Update User if name/username changed
       if (name || username) {
         await tx.user.update({
           where: { id: session.user.id },
@@ -69,30 +73,56 @@ export async function PATCH(req: NextRequest) {
         });
       }
 
-      // 2. Upsert Profile Record
+      // Upsert Profile
       return await tx.profile.upsert({
         where: { userId: session.user.id },
-        update: profilePayload,
+        update: {
+          ...(title !== null && { title }),
+          ...(about !== null && { about }),
+          ...(location !== null && { location }),
+          ...(languages !== undefined && { languages }),
+          ...(imageUrl && { image: imageUrl }),
+        },
         create: {
           userId: session.user.id,
           title: title || "",
           about: about || "",
           location: location || "",
+          languages: languages || [],
           image: imageUrl || "",
         },
+        // Include ALL relations so the frontend state doesn't break
         include: {
-          user: true, // Returns the updated user object back to the frontend
+          user: true,
+          experiences: true,
+          educations: true,
+          skills: true,
+          portfolio: true,
+          gigs: true, // Added this back in to match your GET
+          reviews: true,
         }
       });
+    },{
+      maxWait: 10000, // Time Prisma waits for a connection (10s)
+      timeout: 20000  // Time the transaction is allowed to run (20s)
     });
-
+    
     return NextResponse.json(result);
+
   } catch (error: any) {
     console.error("PROFILE_UPDATE_ERROR:", error);
-    // Specifically catch unique constraint errors (e.g., username taken)
+    
+    // Handle Unique Constraint (Username taken)
     if (error.code === 'P2002') {
-      return NextResponse.json({ error: "Username is already taken" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Username is already taken" }, 
+        { status: 400 }
+      );
     }
-    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
+    
+    return NextResponse.json(
+      { error: error.message || "Internal Server Error" }, 
+      { status: 500 }
+    );
   }
 }

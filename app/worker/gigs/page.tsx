@@ -2,8 +2,8 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
 
-import LoginModal from "@/components/login/LoginModal"
-import RegisterModal from "@/components/register/RegisterModal"
+import LoginModal from "@/components/subcomponents/login/LoginModal"
+import RegisterModal from "@/components/subcomponents/register/RegisterModal"
 import Header from "@/components/global/Header"
 import Sidebar from "@/components/worker/Sidebar"
 import PersonalGigSection from "@/components/worker/gigs/PersonalGigSection"
@@ -38,13 +38,13 @@ export default async function Home() {
           {/* 1. HEADER: Full width at the top */}
           <Header />
 
-          <div className="flex flex-1">
+          <div className="flex flex-1 mt-15">
             {/* 2. SIDEBAR: Fixed/Sticky on the left, but below header */}
             <Sidebar />
 
             {/* 3. MAIN CONTENT: Fills remaining space */}
             <main className="flex-1 ml-24 p-8">
-              <div className="max-w-6xl mx-auto space-y-10">
+              <div className="max-w-full mx-auto space-y-10">
                 {profile && <PersonalGigSection/>}
               </div>
             </main>

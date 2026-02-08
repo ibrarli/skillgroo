@@ -26,7 +26,7 @@ export default function Sidebar() {
   const pathname = usePathname(); // Get current URL
 
   return (
-    <aside className="fixed left-0 top-16 h-screen w-30 bg-white dark:bg-neutral-950 z-50 flex flex-col items-center py-8">
+    <aside className="fixed left-0 top-16 h-screen w-26 bg-white dark:bg-neutral-950 z-50 flex flex-col items-center py-8">
       {/* Navigation Items */}
       <nav className="flex flex-col gap-4 w-full px-3 flex-1">
         {navItems.map((item) => {

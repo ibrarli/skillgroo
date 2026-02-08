@@ -1,35 +1,65 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import ExperienceModal from "./ExperienceModal";
 import axios from "axios";
-import IconButton from "../../global/IconButton";
-import { Briefcase, Calendar, Building2, MoreHorizontal, Edit2, Trash2, Plus } from "lucide-react";
 
+// Icons Import
+import {
+  Briefcase,
+  Plus,
+} from "lucide-react";
+
+// Child Components
+import IconButton from "../../global/IconButton";
+import ExperienceModal from "@/components/worker/profile/modal/ExperienceModal";
+import ExperienceCard from "../../subcomponents/experience/Experience Card";
+
+// Main Component
 export default function ExperienceSection({ profile }: any) {
-  // FIX: Default to empty array if profile or experiences are null
-  const [experiences, setExperiences] = useState(profile?.experiences || []);
+  // States
+  const [experiences, setExperiences] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [selectedExp, setSelectedExp] = useState<any>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
-  // Sync state if profile is loaded asynchronously
+  // Updated sorting logic: Latest Start Date first, then Latest End Date (Current is highest)
+  const sortExperiences = (data: any[]) => {
+    return [...data].sort((a: any, b: any) => {
+      const dateA = new Date(a.startDate).getTime();
+      const dateB = new Date(b.startDate).getTime();
+
+      if (dateB !== dateA) {
+        return dateB - dateA; // Primary: Newest Start Date
+      }
+
+      // Secondary: Newest End Date (Current treated as Infinity)
+      const endA = a.current ? Infinity : new Date(a.endDate || 0).getTime();
+      const endB = b.current ? Infinity : new Date(b.endDate || 0).getTime();
+
+      return endB - endA;
+    });
+  };
+
   useEffect(() => {
     if (profile?.experiences) {
-      setExperiences(profile.experiences);
+      setExperiences(sortExperiences(profile.experiences));
+      setLoading(false);
     }
   }, [profile]);
 
+  // Fetching experience from the DB
   const refresh = async () => {
     try {
       const res = await fetch("/api/profile");
       const data = await res.json();
-      setExperiences(data.experiences || []);
+      setExperiences(sortExperiences(data.experiences || []));
     } catch (error) {
       console.error("Failed to refresh experiences:", error);
     }
   };
 
+  // Opening the Edit Modal
   const handleEdit = (e: React.MouseEvent, exp: any) => {
     e.stopPropagation();
     setSelectedExp(exp);
@@ -37,6 +67,7 @@ export default function ExperienceSection({ profile }: any) {
     setActiveMenu(null);
   };
 
+  // Deleting the Experience
   const handleDelete = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     if (!confirm("Delete this experience?")) return;
@@ -49,6 +80,16 @@ export default function ExperienceSection({ profile }: any) {
     }
   };
 
+  // Format the Date
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      year: "numeric",
+    });
+  };
+
   return (
     <div className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 mt-6 shadow-sm">
       <div className="flex justify-between items-center mb-6">
@@ -56,92 +97,60 @@ export default function ExperienceSection({ profile }: any) {
           <div className="p-2 bg-primary/10 rounded-lg text-primary">
             <Briefcase size={22} />
           </div>
-          <h2 className="text-xl font-bold text-neutral-800 dark:text-white">Experience</h2>
+          <h2 className="text-xl font-bold text-neutral-800 dark:text-white">
+            Experience
+          </h2>
         </div>
-        <IconButton 
-          text="Add Experience" 
-          icon={<Plus size={18}/>} 
-          onClick={() => { setSelectedExp(null); setModalOpen(true); }} 
+        <IconButton
+          text="Add Experience"
+          icon={<Plus size={18} />}
+          onClick={() => {
+            setSelectedExp(null);
+            setModalOpen(true);
+          }}
         />
       </div>
 
-      {experiences.length === 0 ? (
+      {loading ? (
+        // Skeleton Experience
+        <div className="space-y-4">
+          {[1, 2].map((i) => (
+            <div
+              key={i}
+              className="w-full h-32 bg-neutral-50 dark:bg-neutral-800/50 animate-pulse rounded-2xl border border-neutral-100 dark:border-neutral-700"
+            />
+          ))}
+        </div>
+      ) : // Incase of No Experience
+      experiences.length === 0 ? (
         <div className="py-12 text-center border-2 border-dashed border-neutral-100 dark:border-neutral-800 rounded-2xl">
-          <p className="text-neutral-400 font-medium ">No work experience added yet.</p>
+          <p className="text-neutral-400 font-medium ">
+            No work experience added yet.
+          </p>
         </div>
       ) : (
         <div className="space-y-4">
-          {experiences.map((exp: any) => (
-            <div key={exp.id} className="group relative">
-              <div className="w-full bg-neutral-50 dark:bg-neutral-800/50 p-5 rounded-2xl border border-neutral-100 dark:border-neutral-700 hover:border-primary/30 transition-all hover:shadow-md">
-                <div className="flex justify-between items-start">
-                  <div className="space-y-1">
-                    <h3 className="font-bold text-lg text-neutral-900 dark:text-white group-hover:text-primary transition-colors leading-tight">
-                      {exp.title}
-                    </h3>
-                    <div className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400">
-                      <Building2 size={14} className="text-neutral-400" />
-                      <span className="font-medium text-sm">{exp.company}</span>
-                    </div>
-
-                    <div className="flex items-center gap-2 mt-3 text-[11px] font-bold uppercase tracking-wider text-neutral-400 bg-white dark:bg-neutral-800 w-fit px-3 py-1.5 rounded-full border border-neutral-100 dark:border-neutral-700 shadow-sm">
-                      <Calendar size={12} />
-                      <span>
-                        {new Date(exp.from).getFullYear()} — {exp.present ? "Present" : exp.to ? new Date(exp.to).getFullYear() : ""}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="relative">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setActiveMenu(activeMenu === exp.id ? null : exp.id);
-                      }}
-                      className="p-2 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg text-neutral-400 transition-colors"
-                    >
-                      <MoreHorizontal size={20} />
-                    </button>
-
-                    {activeMenu === exp.id && (
-                      <>
-                        <div className="fixed inset-0 z-30" onClick={() => setActiveMenu(null)} />
-                        <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-xl z-40 overflow-hidden ring-1 ring-black ring-opacity-5">
-                          <button
-                            onClick={(e) => handleEdit(e, exp)}
-                            className="w-full flex items-center gap-3 px-4 py-3 text-sm text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors border-b border-neutral-100 dark:border-neutral-700"
-                          >
-                            <Edit2 size={14} className="text-blue-500" />
-                            <span className="font-semibold">Edit Entry</span>
-                          </button>
-                          <button
-                            onClick={(e) => handleDelete(e, exp.id)}
-                            className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                          >
-                            <Trash2 size={14} />
-                            <span className="font-semibold">Delete</span>
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                {exp.description && (
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-4 leading-relaxed pt-3 border-t border-neutral-100/50 dark:border-neutral-700/50">
-                    {exp.description}
-                  </p>
-                )}
-              </div>
-            </div>
+          {experiences.map((exp) => (
+            <ExperienceCard
+              key={exp.id}
+              exp={exp}
+              activeMenu={activeMenu}
+              setActiveMenu={setActiveMenu}
+              handleEdit={handleEdit}
+              handleDelete={handleDelete}
+              formatDate={formatDate}
+            />
           ))}
         </div>
       )}
 
-      <ExperienceModal 
-        isOpen={modalOpen} 
+      <ExperienceModal
+        isOpen={modalOpen}
         experience={selectedExp}
-        onClose={() => { setModalOpen(false); setSelectedExp(null); }}
+        onClose={() => {
+          setModalOpen(false);
+          setSelectedExp(null);
+        }}
         onSaved={refresh}
       />
     </div>

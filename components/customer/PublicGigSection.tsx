@@ -1,67 +1,86 @@
 "use client";
 
-import Image from "next/image";
-import Link from "next/link";
-import { MapPin, User as UserIcon, Star, User2 } from "lucide-react";
-import IconButton from "../global/IconButton";
-import { slugify } from "@/lib/utils";
+import { useMemo, useState } from "react";
+import { Briefcase } from "lucide-react";
+import GigCard from "@/components/subcomponents/gigs/GigCard"; // uneditable GigCard
 
 interface PublicGigSectionProps {
   gigs: any[];
+  category?: string; // e.g., "Plumbing", "Electrical"
 }
 
-export default function PublicGigSection({ gigs }: PublicGigSectionProps) {
-  return (
-    <section className="w-full max-w-7xl mx-auto px-6 py-10">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {gigs.map((gig) => {
-          const username = gig.profile?.user?.username || "user";
-          const gigSlug = slugify(gig.title);
-          
-          return (
-            <Link 
-              href={`/${username}/${gigSlug}`} 
-              key={gig.id} 
-              className="group flex flex-col bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 rounded-[2.5rem] overflow-hidden hover:shadow-2xl transition-all duration-500"
-            >
-              <div className="relative h-64 w-full overflow-hidden">
-                <Image 
-                  src={gig.image || "/placeholder-gig.jpg"} // Fixes the string | null error
-                  alt={gig.title} 
-                  fill 
-                  className="object-cover transition-transform duration-700 group-hover:scale-110" 
-                />
-                <div className="absolute top-5 right-5 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-md px-4 py-2 rounded-2xl shadow-xl">
-                   <span className="text-primary font-black text-lg">${gig.price}</span>
-                </div>
-              </div>
+export default function PublicGigSection({ gigs, category }: PublicGigSectionProps) {
+  const [visibleCount, setVisibleCount] = useState(4); // initial visible gigs
 
-              <div className="p-7 flex flex-col flex-1">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="bg-primary/10 text-primary text-[10px] font-black uppercase px-2 py-1 rounded-md">
-                    {gig.category || "Service"}
-                  </span>
-                </div>
-                <h3 className="text-xl font-extrabold text-neutral-900 dark:text-white mb-3">{gig.title}</h3>
-                <p className="text-sm text-neutral-500 dark:text-neutral-400 line-clamp-2 mb-6">{gig.description}</p>
-                
-                <div className="mt-auto pt-5 border-t dark:border-neutral-800 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full relative overflow-hidden bg-neutral-100">
-                      <Image src={gig.profile?.image || "/default-avatar.png"} alt="User" fill className="object-cover" />
-                    </div>
-                    <div>
-                      <p className="text-[12px] font-black">{gig.profile?.user?.name}</p>
-                      <p className="text-[10px] text-neutral-400">@{username}</p>
-                    </div>
-                  </div>
-                  <IconButton text="View" icon={<User2 size={14}/>} />
-                </div>
-              </div>
-            </Link>
-          );
+  // Filter gigs by category, supporting multiple categories
+  const filteredGigs = useMemo(() => {
+    if (!gigs) return [];
+    return gigs.filter((gig) => {
+      const isActive = gig.status?.toLowerCase() === "active";
+      const matchesCategory =
+        !category ||
+        (gig.category &&
+          Array.isArray(gig.category)
+            ? gig.category.includes(category)
+            : gig.category === category);
+      return isActive && matchesCategory;
+    });
+  }, [gigs, category]);
+
+  if (filteredGigs.length === 0) {
+    return (
+      <div className="w-full py-12 text-center border-2 border-dashed border-neutral-100 dark:border-neutral-800 rounded-[2.5rem]">
+        <Briefcase className="mx-auto text-neutral-200 mb-3" size={32} />
+        <p className="text-neutral-400 font-black uppercase text-[10px] tracking-[0.2em]">
+          No {category || "active"} services available
+        </p>
+      </div>
+    );
+  }
+
+  // Slice gigs for "Load More" functionality
+  const visibleGigs = filteredGigs.slice(0, visibleCount);
+
+  return (
+    <section className="w-full relative py-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        {visibleGigs.map((gig) => {
+          const username = gig.profile?.user?.username || "user";
+
+          const cardGig = {
+            id: gig.id,
+            title: gig.title,
+            description: gig.description,
+            price: gig.price,
+            location: gig.profile?.location || "Remote",
+            category: gig.category,
+            image: gig.image || "/placeholder-gig.jpg",
+            user: {
+              username,
+              name: gig.profile?.user?.name,
+              avatar: gig.profile?.image,
+            },
+            rating: gig.profile?.reviews?.length
+              ? gig.profile.reviews.reduce((acc: number, r: any) => acc + r.rating, 0) / gig.profile.reviews.length
+              : 0,
+            reviews: gig.profile?.reviews?.length || 0,
+            status: gig.status,
+          };
+
+          return <GigCard key={gig.id} gig={cardGig} editable={false} />;
         })}
       </div>
+
+      {filteredGigs.length > visibleCount && (
+        <div className="flex justify-center mt-8">
+          <button
+            className="px-8 py-3 bg-primary text-white font-black uppercase text-xs rounded-3xl hover:bg-primary/90 transition-all"
+            onClick={() => setVisibleCount((prev) => prev + 4)}
+          >
+            Load More
+          </button>
+        </div>
+      )}
     </section>
   );
 }

@@ -1,41 +1,50 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { HelpCircle } from "lucide-react"
-import { ReactNode } from "react"
+import Link from "next/link";
+import { ReactNode } from "react";
+import { Loader2, Edit2 } from "lucide-react";
 
 interface IconButtonProps {
-  text?: string
-  icon?: ReactNode
-  href?: string
-  onClick?: () => void
-  className?: string
+  text?: string;
+  icon?: ReactNode; // can be a component or JSX
+  href?: string;
+  onClick?: () => void;
+  className?: string;
+  loading?: boolean;
+  disabled?: boolean;
 }
 
 export default function IconButton({
-  text = "Button",
-  icon = <HelpCircle size={18} />,
+  text,
+  icon,
   href,
   onClick,
   className = "",
+  loading = false,
+  disabled = false,
 }: IconButtonProps) {
   const content = (
-    <div
+    <button
       onClick={onClick}
-      className={`flex items-center gap-2 px-4 py-2 rounded-lg  bg-primary text-neutral-800 text-sm font-medium   hover:bg-black hover:text-neutral-500 transition cursor-pointer ${className}`}
+      disabled={loading || disabled}
+      className={`flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-neutral-800 text-sm font-medium hover:bg-black hover:text-neutral-500 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
     >
-      <span className="flex-shrink-0">{icon}</span>
-      <span>{text}</span>
-    </div>
-  )
+      {loading ? (
+        <Loader2 className="animate-spin" size={18} />
+      ) : (
+        icon && <span className="flex-shrink-0">{icon}</span>
+      )}
+      {text && <span>{text}</span>}
+    </button>
+  );
 
   if (href) {
     return (
       <Link href={href} className="inline-block">
         {content}
       </Link>
-    )
+    );
   }
 
-  return content
+  return content;
 }

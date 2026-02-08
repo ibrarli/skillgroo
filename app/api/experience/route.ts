@@ -20,16 +20,16 @@ export async function POST(req: NextRequest) {
   }
 
   const experience = await prisma.experience.create({
-    data: {
-      title: body.title,
-      company: body.company,
-      description: body.description,
-      from: new Date(body.from),
-      to: body.present ? null : new Date(body.to),
-      present: body.present,
-      profileId: profile.id,
-    },
-  })
+  data: {
+    title: body.title,
+    company: body.company,
+    description: body.description,
+    startDate: body.startDate, // Prisma handles ISO strings here
+    endDate: body.endDate,     // Prisma handles ISO strings or null here
+    current: body.current,     // Boolean
+    profileId: profile.id,
+  },
+});
 
   return NextResponse.json(experience)
 }

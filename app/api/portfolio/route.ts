@@ -33,7 +33,6 @@ export async function GET() {
     return NextResponse.json({ error: "Database timeout or error" }, { status: 500 });
   }
 }
-
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -41,19 +40,19 @@ export async function POST(req: NextRequest) {
 
     const data = await req.formData();
     
-    // Parse values safely
+    // 1. Extract the new location field
     const title = data.get("title") as string;
     const description = data.get("description") as string;
+    const location = data.get("location") as string; // <--- ADDED THIS
     const hours = Number(data.get("hours") || 0);
     const rate = Number(data.get("rate") || 0);
     const startDate = data.get("startDate") as string;
     const endDate = data.get("endDate") as string;
     const imageFile = data.get("image") as File | null;
 
-    // We still need the profile ID to link the portfolio item
     const profile = await prisma.profile.findUnique({
       where: { userId: session.user.id },
-      select: { id: true } // Only fetch ID to save resources
+      select: { id: true }
     });
 
     if (!profile) return NextResponse.json({ error: "Profile not found" }, { status: 404 });
@@ -70,10 +69,12 @@ export async function POST(req: NextRequest) {
       projectImageUrl = uploadResponse.secure_url;
     }
 
+    // 2. Save location to the Database
     const portfolioEntry = await prisma.portfolio.create({
       data: {
         title,
         description,
+        location,
         hours,
         rate,
         cost: hours * rate,

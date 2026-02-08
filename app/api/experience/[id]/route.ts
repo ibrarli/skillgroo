@@ -3,64 +3,63 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 
+/**
+ * PATCH: Update an existing experience entry
+ */
 export async function PATCH(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  req: Request,
+  { params }: { params: Promise<{ id: string }> } // Define params as a Promise
 ) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
+    // 1. UNWRAP PARAMS (Next.js 15 Fix)
     const { id: expId } = await params;
+
+    if (!expId) {
+      return NextResponse.json({ message: "Experience ID is required" }, { status: 400 });
+    }
+
     const body = await req.json();
 
-    // 1. Fetch Profile with Guard
-    const profile = await prisma.profile.findUnique({
-      where: { userId: session.user.id },
-    });
+    // 2. Date Safety Logic
+    const start = body.startDate ? new Date(body.startDate) : null;
+    const end = body.endDate ? new Date(body.endDate) : null;
 
-    if (!profile) {
-      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
-    }
-
-    // 2. Fetch Experience with Guard
-    const existing = await prisma.experience.findUnique({
-      where: { id: expId },
-    });
-
-    if (!existing) {
-      return NextResponse.json({ error: "Experience not found" }, { status: 404 });
-    }
-
-    // 3. Ownership Check
-    if (existing.profileId !== profile.id) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
+    // 3. Update in Database
     const updated = await prisma.experience.update({
-      where: { id: expId },
+      where: { 
+        id: expId 
+      },
       data: {
         title: body.title,
         company: body.company,
         description: body.description,
-        from: new Date(body.from),
-        to: body.present ? null : new Date(body.to),
-        present: body.present,
+        startDate: start && !isNaN(start.getTime()) ? start : undefined,
+        endDate: body.current ? null : (end && !isNaN(end.getTime()) ? end : null),
+        current: body.current,
       },
     });
 
     return NextResponse.json(updated);
-  } catch (error) {
-    console.error("[EXP_PATCH]", error);
-    return NextResponse.json({ error: "Internal Error" }, { status: 500 });
+  } catch (error: any) {
+    console.error("PATCH ERROR:", error);
+    if (error.code === 'P2025') {
+      return NextResponse.json({ message: "Record not found" }, { status: 404 });
+    }
+    return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
   }
 }
 
+/**
+ * DELETE: Remove an experience entry
+ */
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> } // Define params as a Promise
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -68,8 +67,10 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // 1. UNWRAP PARAMS (Next.js 15 Fix)
     const { id: expId } = await params;
 
+    // 2. Verify Profile ownership
     const profile = await prisma.profile.findUnique({
       where: { userId: session.user.id },
     });
@@ -78,6 +79,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Profile not found" }, { status: 404 });
     }
 
+    // 3. Verify Ownership of the record
     const existing = await prisma.experience.findUnique({
       where: { id: expId },
     });
@@ -86,6 +88,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    // 4. Perform Delete
     await prisma.experience.delete({
       where: { id: expId },
     });

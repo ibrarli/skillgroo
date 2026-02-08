@@ -29,24 +29,29 @@ export default function Header() {
     }
   };
 
-  const handleNotificationAction = async (notification: any, e?: React.MouseEvent) => {
+  const handleNotificationAction = async (
+    notification: any,
+    e?: React.MouseEvent,
+  ) => {
     if (e) e.stopPropagation();
 
     // Mark as read in DB
     await fetch(`/api/notifications/${notification.id}`, {
       method: "PATCH",
       body: JSON.stringify({ read: true }),
-      headers: { "Content-Type": "application/json" }
+      headers: { "Content-Type": "application/json" },
     });
 
     // Remove from local UI list immediately
-    setNotifications(prev => prev.filter(n => n.id !== notification.id));
+    setNotifications((prev) => prev.filter((n) => n.id !== notification.id));
 
     // Redirect logic: Worker notifications to /worker/orders, Customer to /orders
-    if (!e) { // If clicking the whole notification (not just the icon)
+    if (!e) {
+      // If clicking the whole notification (not just the icon)
       setShowDropdown(false);
-      const isWorkerTask = notification.title.toLowerCase().includes("received") || 
-                           notification.title.toLowerCase().includes("new order");
+      const isWorkerTask =
+        notification.title.toLowerCase().includes("received") ||
+        notification.title.toLowerCase().includes("new order");
       router.push(isWorkerTask ? "/worker/orders" : "/orders");
     }
   };
@@ -61,7 +66,7 @@ export default function Header() {
   };
 
   return (
-    <header className="sticky top-0 h-16 z-50 w-full backdrop-blur bg-black/60 ">
+    <header className="fixed top-0 left-0 h-16 z-[100] w-full backdrop-blur-md bg-black/60">
       <div className=" mx-auto px-4  flex items-center justify-between h-full">
         {/* Logo Section */}
         <div className="flex items-center">
@@ -77,14 +82,15 @@ export default function Header() {
 
         {/* Right Section */}
         <div className="flex items-center gap-6">
-
           {/* Notification Icon */}
           <div className="relative">
-            <button 
+            <button
               onClick={() => setShowDropdown(!showDropdown)}
               className="relative p-2 hover:bg-primary hover:cursor-pointer rounded-full group"
             >
-              <Bell className={`w-5 h-5 group-hover:text-white cursor-alias transition-colors ${notifications.length > 0 ? 'text-primary' : 'text-white'}`} />
+              <Bell
+                className={`w-5 h-5 group-hover:text-white cursor-alias transition-colors ${notifications.length > 0 ? "text-primary" : "text-white"}`}
+              />
               {/* Notification Badge - only shows if unread count > 0 */}
               {notifications.length > 0 && (
                 <span className="absolute top-1 right-1 w-2 h-2 bg-green-500 rounded-full"></span>
@@ -95,21 +101,27 @@ export default function Header() {
             {showDropdown && (
               <div className="absolute right-0 mt-4 w-72 bg-neutral-900 border border-neutral-800 rounded-2xl shadow-2xl overflow-hidden">
                 <div className="p-3 border-b border-neutral-800 bg-neutral-900/50">
-                  <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Unread Alerts</p>
+                  <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">
+                    Unread Alerts
+                  </p>
                 </div>
                 <div className="max-h-80 overflow-y-auto">
                   {notifications.length > 0 ? (
                     notifications.map((n) => (
-                      <div 
+                      <div
                         key={n.id}
                         onClick={() => handleNotificationAction(n)}
                         className="p-4 border-b border-neutral-800 hover:bg-white/5 cursor-pointer flex justify-between items-start group/item"
                       >
                         <div className="flex-1 pr-2">
-                          <p className="text-xs font-bold text-white">{n.title}</p>
-                          <p className="text-[10px] text-neutral-400 mt-1 line-clamp-2">{n.message}</p>
+                          <p className="text-xs font-bold text-white">
+                            {n.title}
+                          </p>
+                          <p className="text-[10px] text-neutral-400 mt-1 line-clamp-2">
+                            {n.message}
+                          </p>
                         </div>
-                        <button 
+                        <button
                           onClick={(e) => handleNotificationAction(n, e)}
                           className="p-1 hover:bg-primary/20 rounded-md text-neutral-500 hover:text-primary transition-all"
                         >

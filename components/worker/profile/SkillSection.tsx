@@ -1,19 +1,30 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import SkillModal from "./SkillModal";
-import { Lightbulb, X, Award } from "lucide-react";
 import axios from "axios";
 
+// Icons Import
+import { Lightbulb, X } from "lucide-react";
+
+// Child Component
+import SkillModal from "@/components/worker/profile/modal/SkillModal";
+import SkeletonSkills from "../../subcomponents/skill/SkeletonSkills";
+import SkillPill from "../../subcomponents/skill/SkillPill";
+
+// Types Declaration
 interface Skill {
   id: string;
   name: string;
   level: number;
 }
 
+// Main Component
 export default function SkillSection() {
+  // States
   const [skills, setSkills] = useState<Skill[]>([]);
+  const [loading, setLoading] = useState(true);
 
+  // Fetching data from Database
   const fetchSkills = async () => {
     try {
       const res = await fetch("/api/skills");
@@ -21,9 +32,16 @@ export default function SkillSection() {
       setSkills(data);
     } catch (error) {
       console.error("Failed to fetch skills:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchSkills();
+  }, []);
+
+  // Deleting Data from Database
   const handleDelete = async (id: string) => {
     try {
       await axios.delete(`/api/skills/${id}`);
@@ -32,10 +50,6 @@ export default function SkillSection() {
       console.error("Delete failed", error);
     }
   };
-
-  useEffect(() => {
-    fetchSkills();
-  }, []);
 
   return (
     <div className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 mt-6 shadow-sm">
@@ -51,36 +65,20 @@ export default function SkillSection() {
         <SkillModal onAdd={fetchSkills} />
       </div>
 
-      {skills.length === 0 ? (
+      {loading ? (
+        <SkeletonSkills />
+      ) : skills.length === 0 ? (
         <div className="py-10 text-center border-2 border-dashed border-neutral-100 dark:border-neutral-800 rounded-2xl">
           <p className="text-neutral-400 font-medium">No skills added yet.</p>
         </div>
       ) : (
         <div className="flex flex-wrap gap-3">
           {skills.map((skill) => (
-            <div
+            <SkillPill
               key={skill.id}
-              className="flex items-center bg-neutral-50 dark:bg-neutral-800/40 border border-neutral-200 dark:border-neutral-700 rounded-full pl-4 pr-1 py-1 hover:border-primary/30 transition-all shadow-sm"
-            >
-              {/* Skill Name & Level */}
-              <div className="flex items-center gap-2 mr-2">
-                <span className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
-                  {skill.name}
-                </span>
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-neutral-200 dark:bg-neutral-700 text-neutral-500 dark:text-neutral-400">
-                  {skill.level}Y
-                </span>
-              </div>
-              
-              {/* Delete Button - Styled as a circular end-cap */}
-              <button
-                onClick={() => handleDelete(skill.id)}
-                className="p-1.5 rounded-full text-neutral-400 hover:text-white hover:bg-red-500 transition-all"
-                title="Remove Skill"
-              >
-                <X size={14} strokeWidth={3} />
-              </button>
-            </div>
+              skill={skill}
+              handleDelete={handleDelete}
+            />
           ))}
         </div>
       )}

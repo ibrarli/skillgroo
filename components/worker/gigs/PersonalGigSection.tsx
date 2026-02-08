@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import GigModal from "./GigModal";
-import Image from "next/image";
+import GigModal from "./modal/GigModal";
+import { Briefcase, Loader2, Filter, Plus } from "lucide-react";
 import IconButton from "../../global/IconButton";
-import { Briefcase, Edit3, Trash2, Plus, Loader2 } from "lucide-react";
+import GigCard from "../../subcomponents/gigs/GigCard";
 
 interface Gig {
   id: string;
@@ -13,12 +13,17 @@ interface Gig {
   price: number;
   location: string;
   category?: string;
+  serviceType?: string;
   status?: string;
   image?: string;
+  images?: string[];
+  user?: { username: string; name?: string; avatar?: string };
+  profile?: { user?: { username: string; name?: string }; image?: string };
 }
 
 export default function PersonalGigSection() {
   const [gigs, setGigs] = useState<Gig[]>([]);
+  const [filter, setFilter] = useState<"all" | "active" | "inactive">("all");
   const [selectedGig, setSelectedGig] = useState<Gig | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -36,7 +41,14 @@ export default function PersonalGigSection() {
     }
   };
 
-  useEffect(() => { fetchGigs(); }, []);
+  useEffect(() => {
+    fetchGigs();
+  }, []);
+
+  const filteredGigs = gigs.filter((gig) => {
+    if (filter === "all") return true;
+    return gig.status?.toLowerCase() === filter;
+  });
 
   const handleEdit = (gig: Gig) => {
     setSelectedGig(gig);
@@ -60,76 +72,124 @@ export default function PersonalGigSection() {
 
   const handleDelete = async (gigId: string) => {
     if (!confirm("Delete this gig?")) return;
-    await fetch(`/api/gigs/${gigId}`, { method: "DELETE" });
-    fetchGigs();
+    try {
+      await fetch(`/api/gigs/${gigId}`, { method: "DELETE" });
+      fetchGigs();
+    } catch (error) {
+      console.error("Delete failed", error);
+    }
   };
 
+  const filterBtnClasses = (active: boolean) =>
+    `px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+      active
+        ? "bg-primary text-white shadow-lg shadow-primary/20 scale-105"
+        : "bg-neutral-100 dark:bg-neutral-800 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
+    }`;
+
   return (
-    <div className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-3xl p-6 md:p-8">
-      <div className="flex justify-between items-center mb-8">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-primary/10 rounded-xl text-primary"><Briefcase size={24} /></div>
-          <h2 className="text-2xl font-bold dark:text-white">My Gigs</h2>
+    <div className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-[2.5rem] p-6 md:p-8 shadow-sm">
+      {/* Header Section */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-primary/10 rounded-2xl text-primary shadow-inner">
+            <Briefcase size={28} />
+          </div>
+          <div>
+            <h2 className="text-2xl font-black tracking-tight dark:text-white uppercase">
+              My Gigs
+            </h2>
+            <p className="text-xs font-bold text-neutral-400 uppercase tracking-widest">
+              Manage your active services
+            </p>
+          </div>
         </div>
 
-        {/* Replaced button with IconButton */}
         <IconButton
           text="Add New Gig"
           icon={<Plus size={18} />}
           onClick={handleAddNew}
+          className="w-full sm:w-auto"
         />
       </div>
 
+      {/* Filter Buttons */}
+      <div className="flex flex-wrap items-center gap-3 mb-10 pb-6 border-b border-neutral-50 dark:border-neutral-800/50">
+        <button
+          onClick={() => setFilter("all")}
+          className={filterBtnClasses(filter === "all")}
+        >
+          All Gigs
+        </button>
+        <button
+          onClick={() => setFilter("active")}
+          className={filterBtnClasses(filter === "active")}
+        >
+          Active
+        </button>
+        <button
+          onClick={() => setFilter("inactive")}
+          className={filterBtnClasses(filter === "inactive")}
+        >
+          Inactive
+        </button>
+      </div>
+
       {isLoading ? (
-        <div className="py-20 flex flex-col items-center text-neutral-400 gap-3">
-          <Loader2 className="animate-spin" />
+        <div className="py-32 flex flex-col items-center justify-center text-neutral-400 gap-4">
+          <Loader2 className="animate-spin text-primary" size={32} />
+          <span className="text-[10px] font-black uppercase tracking-[0.2em]">
+            Loading Services...
+          </span>
         </div>
-      ) : gigs.length === 0 ? (
-        <div className="py-16 text-center border-2 border-dashed border-neutral-100 dark:border-neutral-800 rounded-3xl text-neutral-500">
-          No gigs found. Add your first service!
+      ) : filteredGigs.length === 0 ? (
+        <div className="py-24 text-center border-2 border-dashed border-neutral-100 dark:border-neutral-800 rounded-[2rem] flex flex-col items-center gap-4">
+          <div className="p-4 bg-neutral-50 dark:bg-neutral-800 rounded-full text-neutral-300">
+            <Filter size={48} />
+          </div>
+          <p className="text-neutral-500 font-bold uppercase text-xs tracking-widest">
+            {filter === "all"
+              ? "No gigs found. Add your first service!"
+              : `No ${filter} gigs found.`}
+          </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {gigs.map((gig) => (
-            <div key={gig.id} className="group bg-white dark:bg-neutral-800 border border-neutral-100 dark:border-neutral-700 rounded-2xl overflow-hidden shadow-sm flex flex-col transition-all hover:shadow-md">
-              <div className="h-44 w-full relative bg-neutral-100 dark:bg-neutral-900">
-                {gig.image ? (
-                  <Image src={gig.image} alt={gig.title} fill className="object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-neutral-300">
-                    <Briefcase size={40} />
-                  </div>
-                )}
-                <div className="absolute top-3 right-3 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md px-3 py-1 rounded-full text-primary font-black text-sm shadow-sm">
-                  ${gig.price}
-                </div>
-              </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {filteredGigs.map((gig) => {
+            /** * REINFORCED MAPPING LOGIC:
+             * We extract the username from any possible nested location 
+             * (gig.user or gig.profile.user) to avoid the "user" fallback in GigCard.
+             */
+            const resolvedUsername = gig.user?.username || gig.profile?.user?.username;
+            const resolvedName = gig.user?.name || gig.profile?.user?.name || "Professional";
+            const resolvedAvatar = gig.user?.avatar || gig.profile?.image || null;
 
-              <div className="p-5 flex-1 flex flex-col">
-                <h3 className="font-bold text-neutral-800 dark:text-white text-lg truncate mb-1">{gig.title}</h3>
-                <p className="text-sm text-neutral-500 dark:text-neutral-400 line-clamp-2 mb-4 leading-relaxed">{gig.description}</p>
+            const cardGig = {
+              ...gig,
+              user: {
+                username: resolvedUsername, // Passing the actual username string
+                name: resolvedName,
+                avatar: resolvedAvatar,
+              },
+              image:
+                Array.isArray(gig.images) && gig.images.length > 0
+                  ? gig.images[0]
+                  : gig.image || "/placeholder-gig.jpg",
+            };
 
-                <div className="flex gap-2 mt-auto pt-4 border-t border-neutral-50 dark:border-neutral-700/50">
-                  <button
-                    onClick={() => handleEdit(gig)}
-                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-700/50 text-neutral-600 dark:text-neutral-300 text-xs font-bold hover:bg-primary hover:text-white transition-all"
-                  >
-                    <Edit3 size={14} /> Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(gig.id)}
-                    className="p-2.5 rounded-xl border border-red-50 text-red-500 hover:bg-red-50"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
+            return (
+              <GigCard
+                key={gig.id}
+                gig={cardGig as any}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                editable={true}
+              />
+            );
+          })}
         </div>
       )}
 
-      {/* Modal */}
       {modalOpen && (
         <GigModal
           gig={selectedGig}

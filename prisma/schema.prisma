@@ -8,167 +8,34 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ==========================================
+// USER & AUTHENTICATION
+// ==========================================
+
 model User {
-  id        String   @id @default(cuid())
-  username  String   @unique
-  name      String?
-  email     String   @unique
-  password  String
-  role      Role     @default(CUSTOMER)
-  profile   Profile?
-  
+  id                  String         @id @default(cuid())
+  username            String         @unique
+  name                String?
+  email               String         @unique
+  password            String
+  role                Role           @default(CUSTOMER)
+  createdAt           DateTime       @default(now())
+  notificationsEnabled Boolean       @default(true)
+
   // Relations
-  earnings      Earnings?
-  transactions  Transaction[]
-  customerOrders Order[]        @relation("CustomerOrders")
-  providerOrders Order[]        @relation("ProviderOrders")
-  notifications  Notification[]
-  notificationsEnabled Boolean  @default(true)
-  createdAt     DateTime        @default(now())
-}
-
-model Profile {
-  id        String   @id @default(cuid())
-  userId    String   @unique
-  user      User     @relation(fields: [userId], references: [id])
+  profile             Profile?
+  earnings            Earnings?
+  transactions        Transaction[]
+  notifications       Notification[]
   
-  title     String?
-  about     String?
-  location  String?
-  image     String?  // This is your profile picture
+  // Orders
+  customerOrders      Order[]        @relation("CustomerOrders")
+  providerOrders      Order[]        @relation("ProviderOrders")
+  reviewsGiven Review[]
   
-  // Pluralized for consistency
-  gigs        Gig[]
-  experiences Experience[]
-  educations  Education[]
-  skills      Skill[]
-  reviews     Review[]
-  portfolio   Portfolio[]
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-model Experience {
-  id          String   @id @default(cuid())
-  title       String
-  company     String
-  description String   @db.Text // Use Text for longer descriptions
-  
-  // Better naming for frontend consistency
-  startDate   DateTime?
-  endDate     DateTime?
-  current     Boolean  @default(false)
-
-  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  profileId   String
-}
-
-model Education {
-  id          String   @id @default(cuid())
-  degree      String
-  institution String
-  
-  // Better naming for frontend consistency
-  startDate   DateTime?
-  endDate     DateTime?
-  current     Boolean  @default(false)
-
-  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  profileId   String
-}
-
-model Skill {
-  id        String   @id @default(cuid())
-  name      String
-  level     Int      @default(1) // 1-5 or 1-100
-  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  profileId String
-}
-
-model Portfolio {
-  id           String    @id @default(cuid())
-  title        String
-  description  String    @db.Text
-  projectImage String?
-  hours        Int?      // Made optional in case it's a fixed project
-  rate         Float?    // Made optional
-  cost         Float?    // Made optional
-  startDate    DateTime
-  endDate      DateTime?
-  
-  profile      Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  profileId    String
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-}
-
-model Gig {
-  id          String   @id @default(cuid())
-  title       String
-  description String
-  price       Float
-  location    String
-  category    String?
-  status      String?
-  image       String?
-  
-  // Analytics Fields
-  totalViews  Int      @default(0)
-  totalClicks Int      @default(0)
-  impressions Impression[]
-  clicks      Click[]
-
-  profile     Profile  @relation(fields: [profileId], references: [id])
-  profileId   String
-
-  reviews     Review[]
-  orders      Order[]
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-model Impression {
-  id        String   @id @default(cuid())
-  gigId     String
-  gig       Gig      @relation(fields: [gigId], references: [id])
-  createdAt DateTime @default(now())
-}
-
-model Click {
-  id        String   @id @default(cuid())
-  gigId     String
-  gig       Gig      @relation(fields: [gigId], references: [id])
-  createdAt DateTime @default(now())
-}
-
-model Review {
-  id         String   @id @default(cuid())
-  rating     Int
-  comment    String?
-  gig        Gig      @relation(fields: [gigId], references: [id])
-  gigId      String
-  reviewer   Profile  @relation(fields: [reviewerId], references: [id])
-  reviewerId String
-  createdAt  DateTime @default(now())
-}
-
-model Order {
-  id         String   @id @default(cuid())
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  status     String   @default("pending") // "pending", "completed", "cancelled"
-  totalPrice Float
-
-  gigId      String
-  gig        Gig      @relation(fields: [gigId], references: [id])
-
-  customerId String
-  customer   User     @relation("CustomerOrders", fields: [customerId], references: [id])
-
-  providerId String
-  provider   User     @relation("ProviderOrders", fields: [providerId], references: [id])
+  // Proposals
+  proposalsSent       Proposal[]     @relation("CustomerProposals")
+  proposalsReceived   Proposal[]     @relation("ProviderProposals")
 }
 
 enum Role {
@@ -176,10 +43,235 @@ enum Role {
   CUSTOMER
 }
 
+// ==========================================
+// PROFILE & TALENT DATA
+// ==========================================
+
+model Profile {
+  id          String       @id @default(cuid())
+  userId      String       @unique
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  title       String?
+  languages   String[]     @default([])
+  about       String?      @db.Text
+  location    String?
+  image       String?      // This acts as the Avatar
+  
+  gigs        Gig[]
+  experiences Experience[]
+  educations  Education[]
+  skills      Skill[]
+  reviews     Review[]     @relation("ProfileReviews") // Reviews received
+  portfolio   Portfolio[]
+  
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Experience {
+  id          String    @id @default(cuid())
+  title       String
+  company     String
+  description String    @db.Text
+  startDate   DateTime?
+  endDate     DateTime?
+  current     Boolean   @default(false)
+  profileId   String
+  profile     Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+}
+
+model Education {
+  id          String    @id @default(cuid())
+  degree      String
+  institution String
+  startDate   DateTime?
+  endDate     DateTime?
+  current     Boolean   @default(false)
+  profileId   String
+  profile     Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+}
+
+model Skill {
+  id        String  @id @default(cuid())
+  name      String
+  level     Int     @default(1)
+  profileId String
+  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+}
+
+model Portfolio {
+  id           String    @id @default(cuid())
+  title        String
+  description  String    @db.Text
+  projectImage String?
+  hours        Int?      
+  rate         Float?    
+  cost         Float?    
+  startDate    DateTime
+  endDate      DateTime?
+  location     String?
+  profileId    String
+  profile      Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+// ==========================================
+// GIGS & ANALYTICS
+// ==========================================
+
+model Gig {
+  id           String       @id @default(cuid())
+  title        String
+  description  String       @db.Text
+  price        Float
+  location     String
+  category     String?
+  serviceType  String?      // e.g., "One-time", "Recurring"
+  keywords     String?      // Comma separated string
+  status       String?      @default("active")
+  image        String?      // Cover image
+  
+  // Analytics
+  totalViews   Int          @default(0)
+  totalClicks  Int          @default(0)
+  impressions  Impression[]
+  clicks       Click[]
+
+  // Relations
+  profileId    String
+  profile      Profile      @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  reviews      Review[]
+  orders       Order[]
+  proposals    Proposal[]
+  
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+}
+
+model Impression {
+  id        String   @id @default(cuid())
+  gigId     String
+  gig       Gig      @relation(fields: [gigId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model Click {
+  id        String   @id @default(cuid())
+  gigId     String
+  gig       Gig      @relation(fields: [gigId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+// ==========================================
+// TRANSACTIONS, ORDERS & PROPOSALS
+// ==========================================
+
+model Proposal {
+  id             String         @id @default(cuid())
+  description    String         @db.Text
+  estimatedHours Int
+  startDate      DateTime
+  deadlineDays   Int
+  location       String
+  offeredPrice   Float
+  status         ProposalStatus @default(PENDING)
+  images         String[]       // Array of Cloudinary URLs
+  
+  // Relations
+  gigId          String
+  gig            Gig            @relation(fields: [gigId], references: [id], onDelete: Cascade)
+  
+  customerId     String
+  customer       User           @relation("CustomerProposals", fields: [customerId], references: [id])
+  
+  providerId     String
+  provider       User           @relation("ProviderProposals", fields: [providerId], references: [id])
+
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+}
+
+enum ProposalStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  CANCELLED
+  COUNTERED
+}
+
+model Order {
+  id          String   @id @default(cuid())
+  status      String   @default("IN_PROGRESS") 
+  totalPrice  Float
+  
+  gigId       String
+  gig         Gig      @relation(fields: [gigId], references: [id])
+
+  customerId  String
+  customer    User     @relation("CustomerOrders", fields: [customerId], references: [id])
+
+  providerId  String
+  provider    User     @relation("ProviderOrders", fields: [providerId], references: [id])
+
+  proof       OrderProof?
+  
+  // NEW: Track if the order has been rated
+  isReviewed  Boolean  @default(false)
+  review      Review?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Review {
+  id                 String   @id @default(cuid())
+  
+  // Breakdown ratings
+  rating             Float    // This is the calculated average (e.g., 4.7)
+  communication      Int      // 1-5
+  serviceQuality     Int      // 1-5 (Service as Described)
+  valueForMoney      Int      // 1-5 (Recommend)
+  
+  comment            String?  @db.Text
+  showcaseImage      String?  // The image URL selected from OrderProof
+  
+  // Relations
+  orderId            String   @unique
+  order              Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  gigId              String
+  gig                Gig      @relation(fields: [gigId], references: [id], onDelete: Cascade)
+  
+  // Profile receiving the review
+  profileId          String
+  profile            Profile  @relation("ProfileReviews", fields: [profileId], references: [id], onDelete: Cascade)
+  
+  // User giving the review
+  reviewerId         String
+  reviewer           User     @relation(fields: [reviewerId], references: [id])
+
+  createdAt          DateTime @default(now())
+}
+
+// NEW MODEL: Stores the delivery data submitted by the worker
+model OrderProof {
+  id           String   @id @default(cuid())
+  orderId      String   @unique
+  order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  description  String?  @db.Text
+  externalLink String?
+  images       String[] // Cloudinary URLs for the 1-3 proof images
+  
+  submittedAt  DateTime @default(now())
+}
+
 model Earnings {
   id            String   @id @default(cuid())
   userId        String   @unique
-  user          User     @relation(fields: [userId], references: [id])
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   totalBalance  Float    @default(0.0)
   withdrawn     Float    @default(0.0)
   pendingAmount Float    @default(0.0)
@@ -189,10 +281,10 @@ model Earnings {
 model Transaction {
   id          String   @id @default(cuid())
   userId      String
-  user        User     @relation(fields: [userId], references: [id])
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   amount      Float
-  type        String   
-  status      String   
+  type        String   // "payout", "deposit", "payment"
+  status      String   // "pending", "completed", "failed"
   description String
   createdAt   DateTime @default(now())
 }
@@ -200,10 +292,10 @@ model Transaction {
 model Notification {
   id        String   @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   title     String
   message   String
-  link      String?  // e.g., "/orders"
+  link      String?  
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
 }

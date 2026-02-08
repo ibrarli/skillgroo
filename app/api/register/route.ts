@@ -11,7 +11,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "All fields are required" }, { status: 400 })
     }
 
-    // Check if email or username already exists
     const existingUser = await prisma.user.findFirst({
       where: {
         OR: [{ email }, { username }]
@@ -25,17 +24,31 @@ export async function POST(req: Request) {
 
     const hashedPassword = await bcrypt.hash(password, 12)
 
+    // FIXED: Added nested profile creation
     const user = await prisma.user.create({
       data: {
         name,
         username,
         email,
         password: hashedPassword,
+        // This ensures the Profile record is created at the exact same time
+        profile: {
+          create: {
+            title: "New Talent",
+            about: `Hi, I'm ${name || username}!`,
+            location: "Not specified",
+          }
+        }
       },
+      // Include profile in the response so you can see it worked
+      include: {
+        profile: true
+      }
     })
 
     return NextResponse.json({ user }, { status: 201 })
   } catch (error) {
+    console.error("SIGNUP_ERROR:", error) // Always log your errors to the terminal!
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

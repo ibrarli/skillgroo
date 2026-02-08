@@ -1,64 +1,54 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route"; // Use alias for safety
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 
-// --- GET: Fetch all education for the logged-in user ---
 export async function GET() {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
     const educations = await prisma.education.findMany({
-      where: {
-        profile: { userId: session.user.id }
-      },
-      orderBy: { from: "desc" },
+      where: { profile: { userId: session.user.id } },
+      orderBy: { startDate: "desc" }, // Updated to match schema
     });
-
     return NextResponse.json(educations);
   } catch (error) {
     return NextResponse.json({ error: "Failed to fetch education" }, { status: 500 });
   }
 }
 
-// --- POST: Create new education entry ---
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
     const body = await req.json();
-    const { degree, institution, from, to, present } = body;
+    // Use the keys being sent by the modal
+    const { degree, institution, startDate, endDate, current } = body;
 
-    if (!degree || !institution || !from) {
+    // Strict validation: every field is filled before saving
+    if (!degree || !institution || !startDate || (!current && !endDate)) {
       return NextResponse.json(
-        { error: "Degree, institution, and from date are required" },
+        { error: "All fields are required" },
         { status: 400 }
       );
     }
 
-    // Find the profile linked to this user
     const profile = await prisma.profile.findUnique({
       where: { userId: session.user.id },
     });
 
-    if (!profile) {
-      return NextResponse.json({ error: "Profile not found. Please create a profile first." }, { status: 404 });
-    }
+    if (!profile) return NextResponse.json({ error: "Profile not found" }, { status: 404 });
 
     const education = await prisma.education.create({
       data: {
         profileId: profile.id,
         degree,
         institution,
-        from: new Date(from),
-        to: to ? new Date(to) : null,
-        present: present || false,
+        startDate: new Date(startDate),
+        endDate: current ? null : new Date(endDate),
+        current: current || false,
       },
     });
 
