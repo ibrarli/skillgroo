@@ -133,14 +133,14 @@ export default async function EarningsPage({
       <div className="flex flex-1">
         <Sidebar />
         <main className="flex-1 ml-24 p-8 pt-24">
-          <div className="max-w-7xl mx-auto space-y-10">
+          <div className="max-w-full mx-auto space-y-10">
             
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-end gap-6">
               <div>
-                <h1 className="text-5xl font-black tracking-tighter uppercase italic dark:text-white">Finances</h1>
-                <p className="text-neutral-500 font-bold uppercase text-[10px] tracking-[0.3em] mt-2 italic">
-                  * 10% SERVICE FEE APPLIED TO ALL EARNINGS
+                <h1 className="text-4xl font-bold  dark:text-white">Finances</h1>
+                <p className="text-neutral-300   text-sm ">
+                  * 10% Service Fee Applied to all earnings
                 </p>
               </div>
               <div className="flex items-center gap-4">

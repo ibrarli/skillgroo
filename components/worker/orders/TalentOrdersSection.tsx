@@ -36,7 +36,7 @@ export default function TalentOrdersSection({ incoming, active, completed, rejec
       <div className="flex flex-1">
         <Sidebar />
         <main className="flex-1 ml-24 p-8 pt-24">
-          <div className="max-w-6xl mx-auto space-y-8 pb-20">
+          <div className="max-w-full mx-auto space-y-8 pb-20">
             
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b dark:border-neutral-800 pb-6">
               <div className="space-y-1">

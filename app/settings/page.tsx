@@ -22,7 +22,6 @@ export default async function WorkerSettingsPage() {
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex flex-col">
       <Header />
       <div className="flex flex-1">
-        <Sidebar />
         <main className="flex-1 ml-24 p-8 pt-24">
           <div className="max-w-4xl mx-auto space-y-10 pb-20">
             
