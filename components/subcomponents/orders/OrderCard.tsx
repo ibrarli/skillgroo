@@ -56,9 +56,10 @@ export default function OrderCard({ proposal, role }: OrderCardProps) {
     ? new Date(proposal.startDate).toLocaleDateString()
     : new Date(proposal.createdAt).toLocaleDateString();
 
-  const displayHours =
-    proposal.estimatedHours || proposal.proposal?.estimatedHours || "N/A";
-
+  const displayHours = proposal.estimatedHours ?? proposal.proposal?.estimatedHours ?? "N/A";
+  const displayLocation = proposal.location ?? proposal.proposal?.location ?? "Remote";
+  const displayPrice = proposal.offeredPrice ?? proposal.proposal?.offeredPrice ?? proposal.price ?? 0;
+  
   return (
     <>
       <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-5 rounded-4xl flex flex-col md:flex-row items-center gap-6 transition-all hover:border-primary shadow-sm">
@@ -230,9 +231,9 @@ export default function OrderCard({ proposal, role }: OrderCardProps) {
       ) : null}
 
       {completionModalOpen ? (
-        <OrderCompletionModal
-          orderId={proposal.id}
-          onClose={() => setCompletionModalOpen(false)}
+        <OrderCompletionModal 
+          orderId={proposal.order?.id} // IMPORTANT: Pass the Order ID, not Proposal ID
+          onClose={() => setCompletionModalOpen(false)} 
         />
       ) : null}
 

@@ -191,6 +191,7 @@ model Proposal {
 
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
+  order          Order?
 }
 
 enum ProposalStatus {
@@ -198,7 +199,9 @@ enum ProposalStatus {
   ACCEPTED
   DECLINED
   CANCELLED
-  COUNTERED
+  IN_PROGRESS
+  COMPLETED
+  SUBMITTED
 }
 
 model Order {
@@ -223,6 +226,9 @@ model Order {
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  proposalId  String?  @unique
+  proposal    Proposal? @relation(fields: [proposalId], references: [id])
 }
 
 model Review {

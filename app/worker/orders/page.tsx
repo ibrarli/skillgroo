@@ -4,14 +4,18 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import TalentOrdersSection from "@/components/worker/orders/TalentOrdersSection";
 
-export default async function TalentOrdersPage() {
+export default async function Page() {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/");
 
   const userId = session.user.id;
 
-  // Base include for Proposals (Pending/Rejected)
-  const proposalInclude = {
+  /**
+   * We use a unified include for ALL categories.
+   * This ensures that every object passed to OrderCard 
+   * has exactly the same structure.
+   */
+  const unifiedInclude = {
     gig: true,
     customer: { 
       select: { 
@@ -19,36 +23,50 @@ export default async function TalentOrdersPage() {
         username: true, 
         profile: { select: { image: true } } 
       } 
+    },
+    // We include 'order' so that 'Active' and 'Completed' tabs 
+    // can still access reviews and proof of work.
+    order: {
+      include: {
+        review: true,
+        proof: true
+      }
     }
   };
 
-  // Extended include for Orders (Active/Completed)
-  const orderInclude = {
-    ...proposalInclude,
-    review: true,
-    proof: true
-  };
-
-  // Parallel Data Fetching
+  // Parallel Data Fetching - Now querying Proposal table for EVERYTHING
   const [incoming, active, completed, rejected] = await Promise.all([
+    // 1. Pending Proposals
     prisma.proposal.findMany({
       where: { providerId: userId, status: "PENDING" },
-      include: proposalInclude,
+      include: unifiedInclude,
       orderBy: { createdAt: "desc" }
     }),
-    prisma.order.findMany({
-      where: { providerId: userId, status: { in: ["IN_PROGRESS", "SUBMITTED"] } },
-      include: orderInclude,
-      orderBy: { updatedAt: "desc" }
-    }),
-    prisma.order.findMany({
-      where: { providerId: userId, status: "COMPLETED" },
-      include: orderInclude,
-      orderBy: { updatedAt: "desc" }
-    }),
+    // 2. Active Work (Using your updated Enum statuses)
     prisma.proposal.findMany({
-      where: { providerId: userId, status: { in: ["DECLINED", "CANCELLED"] } },
-      include: proposalInclude,
+      where: { 
+        providerId: userId, 
+        status: { in: ["ACCEPTED", "IN_PROGRESS", "SUBMITTED"] } 
+      },
+      include: unifiedInclude,
+      orderBy: { updatedAt: "desc" }
+    }),
+    // 3. Completed Work (Now fetching from Proposal, not Order)
+    prisma.proposal.findMany({
+      where: { 
+        providerId: userId, 
+        status: "COMPLETED" 
+      },
+      include: unifiedInclude,
+      orderBy: { updatedAt: "desc" }
+    }),
+    // 4. History (Cancelled/Declined)
+    prisma.proposal.findMany({
+      where: { 
+        providerId: userId, 
+        status: { in: ["DECLINED", "CANCELLED"] } 
+      },
+      include: unifiedInclude,
       orderBy: { updatedAt: "desc" }
     })
   ]);

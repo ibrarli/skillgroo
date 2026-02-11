@@ -29,7 +29,7 @@ export default function ProposalDetailModal({ proposal, onClose, role }: Proposa
   const handleAction = async (action: "accept" | "reject" | "cancel") => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/proposals/${proposal.id}/action`, {
+      const response = await fetch(`/api/orders/${proposal.id}/proposal`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action }),

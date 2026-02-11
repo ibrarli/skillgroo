@@ -81,7 +81,7 @@ export default function ProposalModal({
       
       images.forEach((img) => data.append("images", img));
 
-      const res = await fetch("/api/proposals", {
+      const res = await fetch("/api/orders/proposal", {
         method: "POST",
         body: data,
       });

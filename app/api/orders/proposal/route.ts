@@ -1,4 +1,10 @@
 // app/api/proposals/route.ts
+
+// Customer Submitting Proposal
+
+// Used in: ProposalModal.tsx
+
+
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
@@ -51,7 +57,7 @@ export async function POST(req: NextRequest) {
         images: imageUrls,
         gigId,
         providerId,
-        customerId: session.user.id, // Ensure this matches schema!
+        customerId: session.user.id, 
         status: "PENDING"
       },
     });

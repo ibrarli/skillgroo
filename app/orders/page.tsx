@@ -26,7 +26,7 @@ export default async function CustomerOrdersPage() {
   };
 
   // 1. ACTIVE PURCHASES (In Progress or Submitted for review)
-  const activePurchases = await prisma.order.findMany({
+  const activePurchases = await prisma.proposal.findMany({
     where: { 
       customerId: userId,
       status: { in: ["IN_PROGRESS", "SUBMITTED"] } 
@@ -36,7 +36,7 @@ export default async function CustomerOrdersPage() {
   });
 
   // 2. COMPLETED ORDERS
-  const completedOrders = await prisma.order.findMany({
+  const completedOrders = await prisma.proposal.findMany({
     where: { 
       customerId: userId,
       status: "COMPLETED" 
