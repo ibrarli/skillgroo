@@ -1,10 +1,3 @@
-// app/api/proposals/route.ts
-
-// Customer Submitting Proposal
-
-// Used in: ProposalModal.tsx
-
-
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
@@ -18,9 +11,7 @@ export async function POST(req: NextRequest) {
 
     const formData = await req.formData();
     
-    // Log the data to see what's arriving in your terminal
-    console.log("Incoming Proposal Data:", Object.fromEntries(formData.entries()));
-
+    // Extracting fields
     const gigId = formData.get("gigId") as string;
     const providerId = formData.get("providerId") as string;
     const description = formData.get("description") as string;
@@ -28,24 +19,32 @@ export async function POST(req: NextRequest) {
     const offeredPrice = parseFloat(formData.get("offeredPrice") as string) || 0;
     const estimatedHours = parseInt(formData.get("estimatedHours") as string) || 0;
     const deadlineDays = parseInt(formData.get("deadlineDays") as string) || 0;
-    const startDate = new Date(formData.get("startDate") as string || Date.now());
+    
+    // Robust date handling
+    const rawDate = formData.get("startDate") as string;
+    const startDate = rawDate ? new Date(rawDate) : new Date();
 
-    // Image Upload Handling
+    // 1. Validation Check
+    if (!gigId || !providerId) {
+      return NextResponse.json({ error: "Missing Gig ID or Provider ID" }, { status: 400 });
+    }
+
+    // 2. Image Upload Handling
     const files = formData.getAll("images") as File[];
     const imageUrls: string[] = [];
 
     for (const file of files) {
-      if (file.size > 0) {
+      if (file && file.size > 0) {
         try {
           const url = await uploadImage(file);
           if (url) imageUrls.push(url as string);
         } catch (uploadErr) {
           console.error("Cloudinary Upload Failed:", uploadErr);
-          // Optional: Continue anyway or return error
         }
       }
     }
 
+    // 3. Create Proposal
     const proposal = await prisma.proposal.create({
       data: {
         description,
@@ -55,10 +54,11 @@ export async function POST(req: NextRequest) {
         location,
         offeredPrice,
         images: imageUrls,
-        gigId,
-        providerId,
-        customerId: session.user.id, 
-        status: "PENDING"
+        status: "PENDING",
+        // Connections
+        gig: { connect: { id: gigId } },
+        provider: { connect: { id: providerId } },
+        customer: { connect: { id: session.user.id } },
       },
     });
 
