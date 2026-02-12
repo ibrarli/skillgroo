@@ -40,7 +40,6 @@ export default async function AnalyticsPage() {
   const totalClicks = userGigs.reduce((acc, gig) => acc + gig._count.clicks, 0);
   const totalOrders = userGigs.reduce((acc, gig) => acc + gig._count.orders, 0);
   
-  // Logic for specialized metrics
   const conversionRate = totalImpressions > 0 
     ? ((totalOrders / totalImpressions) * 100).toFixed(1) 
     : "0";
@@ -54,7 +53,7 @@ export default async function AnalyticsPage() {
     : "0";
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex flex-col font-sans">
+    <div className="min-h-screen bg-background text-foreground flex flex-col font-sans transition-colors duration-300">
       <Header />
       <div className="flex flex-1">
         <Sidebar />
@@ -62,18 +61,17 @@ export default async function AnalyticsPage() {
           <div className="max-w-full mx-auto space-y-10 pb-20">
             
             {/* Page Header */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b dark:border-neutral-800 pb-8">
-          
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-foreground/10 pb-8">
               <div>
-                <h1 className="text-4xl font-bold  dark:text-white">Analytics</h1>
-                <p className="text-neutral-300   text-sm ">
+                <h1 className="text-4xl font-bold text-foreground">Analytics</h1>
+                <p className="text-neutral-500 text-sm">
                   Performance & Service Metrics
                 </p>
               </div>
               
-              <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 rounded-full">
+              <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 rounded-full border border-emerald-500/20">
                 <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">
+                <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">
                   Live Data Sync
                 </span>
               </div>
@@ -112,21 +110,21 @@ export default async function AnalyticsPage() {
             {/* Detailed Section */}
             <div className="space-y-6">
               <div className="flex items-center gap-3">
-                <div className="h-[1px] flex-1 bg-neutral-200 dark:bg-neutral-800" />
-                <h2 className="text-[11px] font-black text-neutral-400 uppercase tracking-[0.4em]">
+                <div className="h-[1px] flex-1 bg-foreground/5" />
+                <h2 className="text-[11px] font-black text-neutral-500 uppercase tracking-[0.4em]">
                   Gig Breakdown
                 </h2>
-                <div className="h-[1px] flex-1 bg-neutral-200 dark:bg-neutral-800" />
+                <div className="h-[1px] flex-1 bg-foreground/5" />
               </div>
 
-              <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-[3rem] overflow-hidden shadow-2xl shadow-neutral-200/50 dark:shadow-none">
-                <div className="p-10 border-b dark:border-neutral-800 flex justify-between items-start">
+              <div className="bg-background border border-foreground/10 rounded-[3rem] overflow-hidden shadow-2xl shadow-foreground/[0.02]">
+                <div className="p-10 border-b border-foreground/10 flex justify-between items-start">
                   <div>
-                    <h2 className="text-2xl font-black dark:text-white tracking-tight">Active Gigs</h2>
+                    <h2 className="text-2xl font-black text-foreground tracking-tight">Active Gigs</h2>
                     <p className="text-xs text-neutral-500 font-medium mt-1">Individual performance tracking for your services</p>
                   </div>
-                  <button className="p-3 bg-neutral-100 dark:bg-neutral-800 rounded-2xl hover:bg-primary transition-colors group">
-                    <ArrowUpRight size={20} className="group-hover:text-black dark:text-white" />
+                  <button className="p-3 bg-foreground/5 rounded-2xl hover:bg-primary transition-colors group">
+                    <ArrowUpRight size={20} className="text-foreground group-hover:text-white" />
                   </button>
                 </div>
                 

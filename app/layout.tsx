@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
-import NextTopLoader from 'nextjs-toploader'; // Import the loader
+import NextTopLoader from "nextjs-toploader"; // Import the loader
+import { ProfileProvider } from "@/context/ProfileContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,30 +19,30 @@ export const metadata: Metadata = {
   title: "Skillgroo",
   description: "Australia's number one skill platform",
 };
-
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    // suppressHydrationWarning is necessary because next-themes 
+    // updates this element
+    <html lang="en" suppressHydrationWarning> 
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <NextTopLoader 
-          color="var(--primary)" 
+        <NextTopLoader
+          color="var(--primary)"
           initialPosition={0.08}
           crawlSpeed={200}
           height={3}
-          crawl={true}
           showSpinner={false}
-          easing="ease"
-          speed={200}
           shadow="0 0 10px var(--primary),0 0 5px var(--primary)"
         />
-        
-        <Providers>{children}</Providers>
+
+        <Providers>
+          <ProfileProvider>{children}</ProfileProvider>
+        </Providers>
       </body>
     </html>
   );

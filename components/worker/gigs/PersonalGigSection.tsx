@@ -84,11 +84,12 @@ export default function PersonalGigSection() {
     `px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
       active
         ? "bg-primary text-white shadow-lg shadow-primary/20 scale-105"
-        : "bg-neutral-100 dark:bg-neutral-800 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
+        : "bg-foreground/5 text-neutral-400 hover:text-foreground/80"
     }`;
 
   return (
-    <div className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-[2.5rem] p-6 md:p-8 shadow-sm">
+    /* Updated background and border to semantic variables */
+    <div className="w-full bg-background border border-foreground/10 rounded-[2.5rem] p-6 md:p-8 shadow-sm">
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div className="flex items-center gap-4">
@@ -96,10 +97,10 @@ export default function PersonalGigSection() {
             <Briefcase size={28} />
           </div>
           <div>
-            <h2 className="text-2xl font-black tracking-tight dark:text-white uppercase">
+            <h2 className="text-2xl font-black tracking-tight text-foreground uppercase">
               My Gigs
             </h2>
-            <p className="text-xs font-bold text-neutral-400 uppercase tracking-widest">
+            <p className="text-xs font-bold text-neutral-500 uppercase tracking-widest">
               Manage your active services
             </p>
           </div>
@@ -114,7 +115,7 @@ export default function PersonalGigSection() {
       </div>
 
       {/* Filter Buttons */}
-      <div className="flex flex-wrap items-center gap-3 mb-10 pb-6 border-b border-neutral-50 dark:border-neutral-800/50">
+      <div className="flex flex-wrap items-center gap-3 mb-10 pb-6 border-b border-foreground/5">
         <button
           onClick={() => setFilter("all")}
           className={filterBtnClasses(filter === "all")}
@@ -143,8 +144,9 @@ export default function PersonalGigSection() {
           </span>
         </div>
       ) : filteredGigs.length === 0 ? (
-        <div className="py-24 text-center border-2 border-dashed border-neutral-100 dark:border-neutral-800 rounded-[2rem] flex flex-col items-center gap-4">
-          <div className="p-4 bg-neutral-50 dark:bg-neutral-800 rounded-full text-neutral-300">
+        /* Empty State adjusted for theme */
+        <div className="py-24 text-center border-2 border-dashed border-foreground/10 rounded-[2rem] flex flex-col items-center gap-4">
+          <div className="p-4 bg-foreground/5 rounded-full text-neutral-400">
             <Filter size={48} />
           </div>
           <p className="text-neutral-500 font-bold uppercase text-xs tracking-widest">
@@ -156,10 +158,6 @@ export default function PersonalGigSection() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredGigs.map((gig) => {
-            /** * REINFORCED MAPPING LOGIC:
-             * We extract the username from any possible nested location 
-             * (gig.user or gig.profile.user) to avoid the "user" fallback in GigCard.
-             */
             const resolvedUsername = gig.user?.username || gig.profile?.user?.username;
             const resolvedName = gig.user?.name || gig.profile?.user?.name || "Professional";
             const resolvedAvatar = gig.user?.avatar || gig.profile?.image || null;
@@ -167,7 +165,7 @@ export default function PersonalGigSection() {
             const cardGig = {
               ...gig,
               user: {
-                username: resolvedUsername, // Passing the actual username string
+                username: resolvedUsername,
                 name: resolvedName,
                 avatar: resolvedAvatar,
               },

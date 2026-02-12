@@ -32,21 +32,12 @@ export default function OrderCard({ proposal, role }: OrderCardProps) {
   const [ratingModalOpen, setRatingModalOpen] = useState(false);
   const [viewRatingOpen, setViewRatingOpen] = useState(false);
 
-  /* =========================
-     SAFER STATUS LOGIC FIX
-     ========================= */
   const status = (proposal.status || "").trim().toUpperCase();
-
   const isSubmitted = status === "SUBMITTED";
   const isCompleted = status === "COMPLETED";
-  const isActive =
-    status === "ACCEPTED" || status === "IN_PROGRESS" || isSubmitted;
-
+  const isActive = status === "ACCEPTED" || status === "IN_PROGRESS" || isSubmitted;
   const hasBeenReviewed = Boolean(proposal.isReviewed);
 
-  /* =========================
-     FORMATTING
-     ========================= */
   const displayName =
     role === "customer"
       ? `To @${proposal.provider?.username || "Provider"}`
@@ -57,14 +48,12 @@ export default function OrderCard({ proposal, role }: OrderCardProps) {
     : new Date(proposal.createdAt).toLocaleDateString();
 
   const displayHours = proposal.estimatedHours ?? proposal.proposal?.estimatedHours ?? "N/A";
-  const displayLocation = proposal.location ?? proposal.proposal?.location ?? "Remote";
-  const displayPrice = proposal.offeredPrice ?? proposal.proposal?.offeredPrice ?? proposal.price ?? 0;
-  
+
   return (
     <>
-      <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-5 rounded-4xl flex flex-col md:flex-row items-center gap-6 transition-all hover:border-primary shadow-sm">
+      <div className="bg-background border border-foreground/10 p-5 rounded-[2rem] flex flex-col md:flex-row items-center gap-6 transition-all hover:border-primary/50 shadow-sm">
         {/* 1. GIG IMAGE */}
-        <div className="relative w-20 h-20 rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 shrink-0 shadow-inner">
+        <div className="relative w-20 h-20 rounded-2xl overflow-hidden bg-foreground/5 shrink-0 shadow-inner">
           <Image
             src={proposal.gig?.image || "/placeholder.jpg"}
             alt="Gig thumbnail"
@@ -74,8 +63,8 @@ export default function OrderCard({ proposal, role }: OrderCardProps) {
         </div>
 
         {/* 2. MAIN INFO */}
-        <div className="flex-1 space-y-1">
-          <div className="flex items-center gap-3">
+        <div className="flex-1 space-y-1 w-full text-center md:text-left">
+          <div className="flex items-center justify-center md:justify-start gap-3">
             <span
               className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-tight ${
                 isSubmitted
@@ -84,28 +73,22 @@ export default function OrderCard({ proposal, role }: OrderCardProps) {
                     ? "bg-green-500/10 text-green-600"
                     : isActive
                       ? "bg-blue-500/10 text-blue-600"
-                      : "bg-neutral-500/10 text-neutral-500"
+                      : "bg-foreground/10 text-neutral-500"
               }`}
             >
-              {isSubmitted
-                ? "Pending Review"
-                : isCompleted
-                  ? "Finished"
-                  : isActive
-                    ? "Active"
-                    : "Proposal"}
+              {isSubmitted ? "Pending Review" : isCompleted ? "Finished" : isActive ? "Active" : "Proposal"}
             </span>
 
-            <span className="text-xs text-neutral-400 font-bold ">
+            <span className="text-xs text-neutral-500 font-bold">
               {displayName}
             </span>
           </div>
 
-          <h3 className="text-xl font-black dark:text-white">
+          <h3 className="text-xl font-black text-foreground">
             {proposal.gig?.title || "Untitled Project"}
           </h3>
 
-          <div className="flex flex-wrap gap-x-4 gap-y-1 text-neutral-500 text-xs font-bold  ">
+          <div className="flex flex-wrap justify-center md:justify-start gap-x-4 gap-y-1 text-neutral-500 text-xs font-bold">
             <span className="flex items-center gap-1">
               <MapPin size={12} className="text-primary" />
               {proposal.location || "Remote"}
@@ -121,9 +104,8 @@ export default function OrderCard({ proposal, role }: OrderCardProps) {
         </div>
 
         {/* 3. ACTIONS */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 md:border-l border-foreground/10 pt-4 md:pt-0 md:pl-6">
           <div className="flex items-center gap-2">
-            {/* WORKER ACTIONS */}
             {role === "worker" ? (
               <div className="flex items-center gap-2">
                 {isActive && (
@@ -132,18 +114,11 @@ export default function OrderCard({ proposal, role }: OrderCardProps) {
                     disabled={isSubmitted}
                     className={`px-5 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 transition-all ${
                       isSubmitted
-                        ? "bg-neutral-100 dark:bg-neutral-800 text-neutral-400 cursor-not-allowed"
-                        : "bg-green-600 text-white hover:scale-105 shadow-lg shadow-green-500/20"
+                        ? "bg-foreground/5 text-neutral-400 cursor-not-allowed"
+                        : "bg-green-600 text-white hover:scale-105 shadow-lg shadow-green-600/20"
                     }`}
                   >
-                    {isSubmitted ? (
-                      "Submitted"
-                    ) : (
-                      <>
-                        <CheckCircle2 size={14} />
-                        Complete Order
-                      </>
-                    )}
+                    {isSubmitted ? "Submitted" : <><CheckCircle2 size={14} /> Complete Order</>}
                   </button>
                 )}
 
@@ -158,19 +133,18 @@ export default function OrderCard({ proposal, role }: OrderCardProps) {
                 )}
 
                 {isCompleted && !hasBeenReviewed && (
-                  <div className="px-5 py-3 bg-neutral-100 dark:bg-neutral-800 text-neutral-400 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2">
+                  <div className="px-5 py-3 bg-foreground/5 text-neutral-500 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2">
                     <CheckCircle2 size={14} className="text-green-500" />
                     Task Done
                   </div>
                 )}
               </div>
             ) : (
-              /* CUSTOMER ACTIONS */
               <div className="flex items-center gap-2">
                 {isSubmitted && (
                   <button
                     onClick={() => setReviewModalOpen(true)}
-                    className="px-5 py-3 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:scale-105 transition-all shadow-lg shadow-blue-500/20 animate-pulse hover:animate-none"
+                    className="px-5 py-3 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:scale-105 transition-all shadow-lg shadow-blue-600/20 animate-pulse hover:animate-none"
                   >
                     <ClipboardCheck size={14} />
                     Review Work
@@ -188,7 +162,7 @@ export default function OrderCard({ proposal, role }: OrderCardProps) {
                 )}
 
                 {isCompleted && hasBeenReviewed && (
-                  <div className="px-5 py-3 bg-neutral-100 dark:bg-neutral-800 text-neutral-400 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2">
+                  <div className="px-5 py-3 bg-foreground/5 text-neutral-500 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2">
                     <CheckCircle2 size={14} className="text-green-500" />
                     Feedback Sent
                   </div>
@@ -196,19 +170,17 @@ export default function OrderCard({ proposal, role }: OrderCardProps) {
               </div>
             )}
 
-            {/* VIEW DETAILS BUTTON */}
             <button
               onClick={() => setModalOpen(true)}
-              className="p-3 bg-neutral-100 dark:bg-neutral-800 rounded-xl hover:bg-neutral-900 dark:hover:bg-white dark:hover:text-black hover:text-white transition-all text-neutral-500"
+              className="p-3 bg-foreground/5 rounded-xl hover:bg-foreground hover:text-background transition-all text-neutral-500"
               title="Full Details"
             >
               <Eye size={18} />
             </button>
           </div>
 
-          {/* PRICE */}
-          <div className="flex flex-col  min-w-30 border-l dark:border-neutral-800 pl-4">
-            <p className="text-xs font-black text-neutral-400  mb-1">
+          <div className="flex flex-col text-right min-w-[80px]">
+            <p className="text-[10px] font-black text-neutral-500 mb-1 uppercase tracking-tighter">
               {isCompleted ? "Total Paid" : "Price"}
             </p>
             <p className="text-xl font-black text-primary leading-none">
@@ -218,45 +190,12 @@ export default function OrderCard({ proposal, role }: OrderCardProps) {
         </div>
       </div>
 
-      {/* =========================
-         MODALS
-         ========================= */}
-
-      {modalOpen ? (
-        <ProposalDetailModal
-          proposal={proposal}
-          role={role}
-          onClose={() => setModalOpen(false)}
-        />
-      ) : null}
-
-      {completionModalOpen ? (
-        <OrderCompletionModal 
-          orderId={proposal.order?.id} // IMPORTANT: Pass the Order ID, not Proposal ID
-          onClose={() => setCompletionModalOpen(false)} 
-        />
-      ) : null}
-
-      {reviewModalOpen ? (
-        <ReviewDeliveryModal
-          orderId={proposal.id}
-          onClose={() => setReviewModalOpen(false)}
-        />
-      ) : null}
-
-      {ratingModalOpen ? (
-        <RatingModal
-          order={proposal}
-          onClose={() => setRatingModalOpen(false)}
-        />
-      ) : null}
-
-      {viewRatingOpen ? (
-        <ViewRatingModal
-          proposal={proposal}
-          onClose={() => setViewRatingOpen(false)}
-        />
-      ) : null}
+      {/* MODALS */}
+      {modalOpen && <ProposalDetailModal proposal={proposal} role={role} onClose={() => setModalOpen(false)} />}
+      {completionModalOpen && <OrderCompletionModal orderId={proposal.order?.id} onClose={() => setCompletionModalOpen(false)} />}
+      {reviewModalOpen && <ReviewDeliveryModal orderId={proposal.id} onClose={() => setReviewModalOpen(false)} />}
+      {ratingModalOpen && <RatingModal order={proposal} onClose={() => setRatingModalOpen(false)} />}
+      {viewRatingOpen && <ViewRatingModal proposal={proposal} onClose={() => setViewRatingOpen(false)} />}
     </>
   );
 }

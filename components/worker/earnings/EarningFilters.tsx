@@ -13,14 +13,32 @@ export default function EarningFilters() {
 
   const btnClass = (active: boolean) => `
     px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all
-    ${active ? 'bg-neutral-900 text-white dark:bg-white dark:text-black shadow-lg' : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-500 hover:bg-neutral-200'}
+    ${active 
+      ? 'bg-foreground text-background shadow-lg shadow-foreground/10' 
+      : 'text-neutral-500 hover:bg-foreground/5'}
   `;
 
   return (
-    <div className="flex bg-neutral-100 dark:bg-neutral-800 p-1 rounded-full border dark:border-neutral-700">
-      <button onClick={() => setFilter("all")} className={btnClass(current === "all")}>All</button>
-      <button onClick={() => setFilter("year")} className={btnClass(current === "year")}>Year</button>
-      <button onClick={() => setFilter("month")} className={btnClass(current === "month")}>Month</button>
+    /* Container updated to use background-level foreground tint */
+    <div className="flex bg-foreground/[0.03] p-1 rounded-full border border-foreground/10">
+      <button 
+        onClick={() => setFilter("all")} 
+        className={btnClass(current === "all")}
+      >
+        All
+      </button>
+      <button 
+        onClick={() => setFilter("year")} 
+        className={btnClass(current === "year")}
+      >
+        Year
+      </button>
+      <button 
+        onClick={() => setFilter("month")} 
+        className={btnClass(current === "month")}
+      >
+        Month
+      </button>
     </div>
   );
 }

@@ -1,12 +1,27 @@
 @import "tailwindcss";
 
+/* 1. Define Light Mode Variables */
 :root {
   --background: #ffffff;
   --foreground: #171717;
   --primary: #8ca9d3;
   --secondary: #0a2065;
+  
+  /* Standard Tailwind v4 variable mapping */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
 }
 
+/* 2. Define Dark Mode Overrides */
+/* This is what next-themes targets when you click the button */
+.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  /* Adjust primary if it looks too dull on black */
+  --primary: #a5c2f0; 
+}
+
+/* 3. Map to Tailwind Theme */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -16,17 +31,10 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-    --primary: #8ca9d3;
-    --secondary: #0a2065;
-  }
-}
-
+/* 4. Apply to Body */
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  /* Smooth transition for theme switching */
+  transition: background-color 0.3s ease, color 0.3s ease;
 }

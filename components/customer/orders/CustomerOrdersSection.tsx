@@ -15,11 +15,10 @@ interface Props {
   active: any[];
   completed: any[];
   sent: any[];
-  rejected: any[]; // This contains DECLINED and CANCELLED
+  rejected: any[];
 }
 
 export default function CustomerOrdersSection({ active, completed, sent, rejected }: Props) {
-  // Default to active purchases, fallback to sent proposals
   const [activeTab, setActiveTab] = useState(active.length > 0 ? "active" : "sent");
 
   const tabs = [
@@ -30,26 +29,27 @@ export default function CustomerOrdersSection({ active, completed, sent, rejecte
   ];
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex flex-col font-sans">
+    <div className="min-h-screen bg-background flex flex-col font-sans transition-colors duration-300">
       <Header />
       <main className="max-w-6xl mx-auto w-full p-8 pt-24 space-y-8 pb-32">
         
         {/* Header & Tabs */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b dark:border-neutral-800 pb-6">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-foreground/10 pb-6">
           <div className="space-y-1">
-            <h1 className="text-4xl font-black dark:text-white tracking-tighter uppercase italic">My Orders</h1>
-            <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Tracking your service history</p>
+            <h1 className="text-4xl font-black text-foreground tracking-tighter uppercase italic">My Orders</h1>
+            <p className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Tracking your service history</p>
           </div>
 
-          <div className="flex items-center gap-1 p-1 bg-neutral-200/50 dark:bg-neutral-900/50 rounded-2xl border dark:border-neutral-800">
+          {/* Adaptive Tab Container */}
+          <div className="flex items-center gap-1 p-1 bg-foreground/[0.03] rounded-2xl border border-foreground/5">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
                   activeTab === tab.id 
-                    ? "bg-white dark:bg-neutral-800 text-black dark:text-white shadow-sm" 
-                    : "text-neutral-500 hover:text-neutral-700"
+                    ? "bg-background text-foreground shadow-sm ring-1 ring-foreground/5" 
+                    : "text-neutral-500 hover:text-foreground hover:bg-foreground/5"
                 }`}
               >
                 <span className={activeTab === tab.id ? tab.color : ""}>{tab.icon}</span>
@@ -57,8 +57,8 @@ export default function CustomerOrdersSection({ active, completed, sent, rejecte
                 {tab.count > 0 && (
                   <span className={`ml-1 px-1.5 py-0.5 rounded text-[8px] font-bold ${
                     activeTab === tab.id 
-                      ? "bg-black text-white dark:bg-white dark:text-black" 
-                      : "bg-neutral-200 dark:bg-neutral-700 text-neutral-500"
+                      ? "bg-foreground text-background" 
+                      : "bg-foreground/10 text-neutral-500"
                   }`}>
                     {tab.count}
                   </span>
@@ -70,7 +70,7 @@ export default function CustomerOrdersSection({ active, completed, sent, rejecte
 
         {/* Tab Content */}
         <div className="transition-all duration-300">
-          <div className="grid grid-cols-1 gap-4 animate-in fade-in slide-in-from-bottom-4">
+          <div className="grid grid-cols-1 gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {activeTab === "active" && (
               active.length > 0 ? active.map((o) => <OrderCard key={o.id} proposal={o} role="customer" />) : <EmptyState message="No active purchases" />
             )}
@@ -96,11 +96,11 @@ export default function CustomerOrdersSection({ active, completed, sent, rejecte
 
 function EmptyState({ message }: { message: string }) {
   return (
-    <div className="py-24 flex flex-col items-center justify-center bg-white dark:bg-neutral-900/40 border-2 border-dashed border-neutral-200 dark:border-neutral-800 rounded-[3rem] text-center">
-      <div className="p-4 bg-neutral-100 dark:bg-neutral-800 rounded-full mb-4">
-        <PackageSearch size={32} className="text-neutral-400" />
+    <div className="py-24 flex flex-col items-center justify-center bg-foreground/[0.02] border-2 border-dashed border-foreground/10 rounded-[3rem] text-center">
+      <div className="p-4 bg-foreground/5 rounded-full mb-4">
+        <PackageSearch size={32} className="text-neutral-500" />
       </div>
-      <p className="text-neutral-400 font-black uppercase text-[10px] tracking-[0.2em]">{message}</p>
+      <p className="text-neutral-500 font-black uppercase text-[10px] tracking-[0.2em]">{message}</p>
     </div>
   );
 }

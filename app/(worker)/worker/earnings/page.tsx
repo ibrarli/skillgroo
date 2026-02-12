@@ -18,26 +18,20 @@ export default async function EarningsPage({
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) redirect("/");
 
-  const timeframe = searchParams.get?.timeframe || "all";
+  const timeframe = searchParams.timeframe || "all";
   const now = new Date();
   const COMMISSION_FACTOR = 0.9; // Platform takes 10%
   
-  // --- CLEARING THRESHOLD ---
-  // For Production: Use .setDate(now.getDate() - 10)
-  // For Testing: Use .setMinutes(now.getMinutes() - 2)
   const tenDaysAgo = new Date();
   tenDaysAgo.setDate(tenDaysAgo.getDate() - 10); 
-  // tenDaysAgo.setDate(tenDaysAgo.getMinutes() - 2);
-  // --- 1. SETTLEMENT LOGIC (Background Processing) ---
-  // This logic runs every time the page loads, checking for orders 
-  // that have finished their individual 10-day clearing period.
+
   const settleFunds = async () => {
     const clearableOrders = await prisma.order.findMany({
       where: {
         providerId: session.user.id,
         status: "COMPLETED",
-        isSettled: false, // Only pick orders not yet moved to Available Balance
-        updatedAt: { lte: tenDaysAgo }, // Only pick orders older than 10 days
+        isSettled: false,
+        updatedAt: { lte: tenDaysAgo },
       },
     });
 
@@ -48,17 +42,14 @@ export default async function EarningsPage({
       );
 
       await prisma.$transaction([
-        // Add to Available Balance
         prisma.earnings.update({
           where: { userId: session.user.id },
           data: { totalBalance: { increment: amountToMove } },
         }),
-        // Mark these specific orders as Settled
         prisma.order.updateMany({
           where: { id: { in: clearableOrders.map((o) => o.id) } },
           data: { isSettled: true },
         }),
-        // Log the clearance in transactions
         prisma.transaction.create({
           data: {
             userId: session.user.id,
@@ -74,7 +65,6 @@ export default async function EarningsPage({
 
   await settleFunds();
 
-  // --- 2. DATA FETCHING ---
   let dateFilter = {};
   if (timeframe === "month") {
     dateFilter = { createdAt: { gte: new Date(now.getFullYear(), now.getMonth(), 1) } };
@@ -82,14 +72,13 @@ export default async function EarningsPage({
     dateFilter = { createdAt: { gte: new Date(now.getFullYear(), 0, 1) } };
   }
 
-  // Fetch all orders to calculate Active and Clearing buckets
   const orders = await prisma.order.findMany({
     where: { providerId: session.user.id },
     select: {
       status: true,
       totalPrice: true,
       updatedAt: true,
-      isSettled: true, // Crucial for subtraction logic
+      isSettled: true,
     },
   });
 
@@ -102,33 +91,26 @@ export default async function EarningsPage({
     orderBy: { createdAt: "desc" },
   });
 
-  // --- 3. BUCKET CALCULATIONS ---
   let activeOrdersValue = 0;
   let clearingValue = 0;
   let totalNetEarnings = 0;
 
   orders.forEach((order) => {
     const netAmount = order.totalPrice * COMMISSION_FACTOR;
-
-    // Total Net Income: All completed orders ever
     if (order.status === "COMPLETED") {
       totalNetEarnings += netAmount;
     }
-
-    // Active Orders: Work currently in progress
     if (order.status === "IN_PROGRESS" || order.status === "SUBMITTED") {
       activeOrdersValue += netAmount;
     } 
-    // Clearing: COMPLETED but NOT YET SETTLED
-    // As soon as settleFunds() marks an order as isSettled: true, 
-    // it automatically disappears from this bucket.
     else if (order.status === "COMPLETED" && !order.isSettled) {
       clearingValue += netAmount;
     }
   });
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex flex-col font-sans">
+    /* Updated bg-neutral-50 dark:bg-neutral-950 to bg-background */
+    <div className="min-h-screen bg-background text-foreground flex flex-col font-sans transition-colors duration-300">
       <Header />
       <div className="flex flex-1">
         <Sidebar />
@@ -138,8 +120,8 @@ export default async function EarningsPage({
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-end gap-6">
               <div>
-                <h1 className="text-4xl font-bold  dark:text-white">Finances</h1>
-                <p className="text-neutral-300   text-sm ">
+                <h1 className="text-4xl font-bold text-foreground">Finances</h1>
+                <p className="text-neutral-500 text-sm">
                   * 10% Service Fee Applied to all earnings
                 </p>
               </div>
@@ -151,7 +133,7 @@ export default async function EarningsPage({
 
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-               <StatCard 
+              <StatCard 
                 title="Active Orders" 
                 amount={activeOrdersValue} 
                 icon={<Activity className="text-blue-500" />} 
@@ -170,7 +152,7 @@ export default async function EarningsPage({
                 trend="Ready for payout"
                 primary
               />
-               <StatCard 
+              <StatCard 
                 title="Net Income" 
                 amount={totalNetEarnings} 
                 icon={<Banknote className="text-purple-500" />} 
@@ -184,10 +166,10 @@ export default async function EarningsPage({
               />
             </div>
 
-            {/* Transactions */}
-            <div className="bg-white dark:bg-neutral-900 border-2 border-neutral-100 dark:border-neutral-800 rounded-[3rem] overflow-hidden shadow-xl shadow-neutral-200/50 dark:shadow-none">
-              <div className="p-8 border-b dark:border-neutral-800 flex justify-between items-center">
-                <h2 className="text-xl font-black uppercase tracking-tighter dark:text-white">Transaction Ledger</h2>
+            {/* Transactions Ledger Card */}
+            <div className="bg-background border-2 border-foreground/10 rounded-[3rem] overflow-hidden shadow-xl shadow-foreground/[0.02]">
+              <div className="p-8 border-b border-foreground/10 flex justify-between items-center">
+                <h2 className="text-xl font-black uppercase tracking-tighter text-foreground">Transaction Ledger</h2>
                 <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">
                   {transactions.length} Records found
                 </div>

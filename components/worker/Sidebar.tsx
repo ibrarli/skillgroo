@@ -10,6 +10,7 @@ import {
   ShoppingBag,
   Wallet,
   LogOut,
+  Award,
 } from "lucide-react";
 
 const navItems = [
@@ -18,6 +19,7 @@ const navItems = [
   { name: "Orders", icon: ShoppingBag, path: "/worker/orders" },
   { name: "Earnings", icon: Wallet, path: "/worker/earnings" },
   { name: "Analytics", icon: BarChart3, path: "/worker/analytics" },
+  { name: "Ranking", icon: Award, path: "/worker/ranking" },
 ];
 
 export default function Sidebar() {
@@ -25,24 +27,25 @@ export default function Sidebar() {
   const pathname = usePathname(); // Get current URL
 
   return (
-    <aside className="fixed left-0 top-16 h-screen w-26  bg-white dark:bg-neutral-950 z-50 flex flex-col items-center py-8">
+    /* Updated bg-white dark:bg-neutral-950 to bg-background */
+    <aside className="fixed left-0 top-16 h-screen w-26 bg-background border-r border-foreground/5 z-50 flex flex-col items-center py-8 transition-colors duration-300">
       {/* Navigation Items */}
       <nav className="flex flex-col gap-4 w-full px-3 flex-1">
         {navItems.map((item) => {
           const Icon = item.icon;
-          // Logic: Match exact path or sub-routes
           const isActive = pathname === item.path;
 
           return (
             <button
               key={item.name}
               onClick={() => router.push(item.path)}
+              /* Updated inactive states and hover to use foreground variables */
               className={`
               group relative w-20 flex cursor-pointer flex-col items-center justify-center py-4 rounded-2xl transition-all duration-200
               ${
                 isActive
                   ? "bg-primary text-white shadow-lg shadow-primary/25"
-                  : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
+                  : "text-neutral-500 hover:bg-foreground/5 hover:text-foreground"
               }
               `}
             >

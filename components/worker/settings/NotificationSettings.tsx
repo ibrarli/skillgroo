@@ -27,18 +27,26 @@ export default function NotificationSettings({ initialEnabled }: { initialEnable
   };
 
   return (
-    <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-8 rounded-[2.5rem] flex items-center justify-between">
+    /* Changed bg-white dark:bg-neutral-900 to bg-background */
+    <div className="bg-background border border-foreground/10 p-8 rounded-[2.5rem] flex items-center justify-between transition-colors shadow-sm">
       <div>
-        <h3 className="text-lg font-black dark:text-white">Push Notifications</h3>
+        {/* Changed dark:text-white to text-foreground */}
+        <h3 className="text-lg font-black text-foreground">Push Notifications</h3>
         <p className="text-sm text-neutral-500 font-medium">Receive alerts for new orders and messages</p>
       </div>
       
       <button 
         onClick={toggleNotifications}
         disabled={loading}
-        className={`w-14 h-8 rounded-full transition-all flex items-center px-1 ${enabled ? 'bg-primary' : 'bg-neutral-200 dark:bg-neutral-800'}`}
+        /* Updated 'off' state to bg-foreground/10 for a sleek adaptive look */
+        className={`w-14 h-8 rounded-full transition-all flex items-center px-1 disabled:opacity-50 ${
+          enabled ? 'bg-primary' : 'bg-foreground/10'
+        }`}
       >
-        <div className={`w-6 h-6 bg-white rounded-full shadow-sm transition-transform ${enabled ? 'translate-x-6' : 'translate-x-0'}`} />
+        {/* The toggle knob stays bg-white or can be set to bg-background for a more 'integrated' look */}
+        <div className={`w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-200 ${
+          enabled ? 'translate-x-6' : 'translate-x-0'
+        }`} />
       </button>
     </div>
   );
