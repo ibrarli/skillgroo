@@ -7,7 +7,13 @@ import RegisterModal from "@/components/subcomponents/register/RegisterModal"
 import Header from "@/components/global/Header"
 import Sidebar from "@/components/worker/Sidebar"
 import PersonalGigSection from "@/components/worker/gigs/PersonalGigSection"
+import { Metadata } from "next";
 
+export const metadata: Metadata = {
+  title: "Your Gigs | Service Management",
+  description: "Create, edit, and optimize your service offerings to reach more clients.",
+  robots: "noindex, nofollow",
+};
 export default async function Home() {
   const session = await getServerSession(authOptions)
 

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
-import { Settings, LogOut, ChevronDown } from "lucide-react";
+import { Settings, LogOut, ChevronDown, Loader2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import AuthModal from "../AuthModal";
@@ -13,6 +13,7 @@ export default function UserProfile() {
   const { profile, loading: isProfileLoading } = useProfile();
   
   const [isOpen, setIsOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -24,6 +25,30 @@ export default function UserProfile() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // --- LOGIC: SIGN OUT & SET OFFLINE ---
+  const handleSignOut = async () => {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+
+    try {
+      // We send a dedicated PATCH to set status to offline before session ends
+      const formData = new FormData();
+      formData.append("isOnline", "false");
+      
+      await fetch("/api/profile", {
+        method: "PATCH",
+        body: formData,
+        // keepalive ensures the request finishes even if the redirect starts
+        keepalive: true, 
+      });
+    } catch (error) {
+      console.error("Failed to update status during signout:", error);
+    } finally {
+      // Clear the session and redirect home
+      signOut({ callbackUrl: "/" });
+    }
+  };
 
   // --- 1. SKELETON STATE ---
   if (status === "loading" || (status === "authenticated" && isProfileLoading)) {
@@ -60,7 +85,8 @@ export default function UserProfile() {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 p-1.5 pr-3 cursor-pointer hover:bg-foreground/5 rounded-2xl transition-all group border border-transparent hover:border-foreground/10"
+        disabled={isLoggingOut}
+        className="flex items-center gap-2 p-1.5 pr-3 cursor-pointer hover:bg-foreground/5 rounded-2xl transition-all group border border-transparent hover:border-foreground/10 disabled:opacity-50"
       >
         <div className="w-10 h-10 rounded-xl relative overflow-hidden bg-primary/10 flex items-center justify-center text-primary font-bold">
           {displayImage ? (
@@ -75,7 +101,7 @@ export default function UserProfile() {
             {userName.split(" ")[0]}
           </p>
           <p className="text-[10px] text-neutral-500 font-medium mt-1 uppercase tracking-wider">
-            Account
+            {isLoggingOut ? "Syncing..." : "Account"}
           </p>
         </div>
 
@@ -123,13 +149,18 @@ export default function UserProfile() {
             </Link>
             
             <button
-              onClick={() => signOut()}
-              className="flex items-center cursor-pointer gap-3 px-3 py-2.5 text-sm font-bold text-red-500 hover:bg-red-500/10 rounded-xl transition-colors w-full mt-1"
+              onClick={handleSignOut}
+              disabled={isLoggingOut}
+              className="flex items-center cursor-pointer gap-3 px-3 py-2.5 text-sm font-bold text-red-500 hover:bg-red-500/10 rounded-xl transition-colors w-full mt-1 disabled:opacity-50"
             >
               <div className="p-1.5 bg-red-500/10 text-red-500 rounded-lg">
-                <LogOut size={16} />
+                {isLoggingOut ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <LogOut size={16} />
+                )}
               </div>
-              Sign Out
+              {isLoggingOut ? "Signing out..." : "Sign Out"}
             </button>
           </div>
         </div>

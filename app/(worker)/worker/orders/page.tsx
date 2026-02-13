@@ -3,6 +3,29 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import TalentOrdersSection from "@/components/worker/orders/TalentOrdersSection";
+import { Metadata } from "next";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const session = await getServerSession(authOptions);
+  
+  if (!session?.user?.id) return { title: "Orders | Dashboard" };
+
+  // Fetch the count of active orders
+  const activeCount = await prisma.order.count({
+    where: {
+      providerId: session.user.id,
+      status: "IN_PROGRESS", // Adjust this status to match your schema
+    },
+  });
+
+  return {
+    title: activeCount > 0 
+      ? `Orders (${activeCount}) | Worker Dashboard` 
+      : "Orders | Worker Dashboard",
+    description: "Track your active projects and manage your workflow.",
+    robots: "noindex, nofollow",
+  };
+}
 
 export default async function Page() {
   const session = await getServerSession(authOptions);

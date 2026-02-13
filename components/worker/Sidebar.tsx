@@ -11,12 +11,14 @@ import {
   Wallet,
   LogOut,
   Award,
+  Zap,
 } from "lucide-react";
 
 const navItems = [
   { name: "Profile", icon: UserCircle, path: "/worker" },
   { name: "Gigs", icon: Briefcase, path: "/worker/gigs" },
   { name: "Orders", icon: ShoppingBag, path: "/worker/orders" },
+  { name: "Promote", icon: Zap, path: "/worker/promote" }, // New Promotion/Ads Page
   { name: "Earnings", icon: Wallet, path: "/worker/earnings" },
   { name: "Analytics", icon: BarChart3, path: "/worker/analytics" },
   { name: "Ranking", icon: Award, path: "/worker/ranking" },
@@ -44,7 +46,7 @@ export default function Sidebar() {
               group relative w-20 flex cursor-pointer flex-col items-center justify-center py-4 rounded-2xl transition-all duration-200
               ${
                 isActive
-                  ? "bg-neutral-900 text-white shadow-lg shadow-primary/25"
+                  ? "bg-neutral-200 dark:bg-neutral-900 text-black dark:text-white shadow-lg shadow-primary/25"
                   : "text-neutral-500 hover:bg-foreground/5 hover:text-foreground"
               }s
               `}

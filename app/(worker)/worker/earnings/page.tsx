@@ -10,7 +10,13 @@ import WithdrawModal from "@/components/worker/earnings/WithdrawModal";
 import EarningFilters from "@/components/worker/earnings/EarningFilters";
 import PayoutMethodModal from "@/components/worker/earnings/PayoutMethodModal"; // New Import
 import { Wallet, ArrowUpRight, Clock, Banknote, Activity } from "lucide-react";
+import { Metadata } from "next";
 
+export const metadata: Metadata = {
+  title: "Earnings & Payouts | Financial Overview",
+  description: "Monitor your revenue, view pending payments, and manage your Australian payout methods.",
+  robots: "noindex, nofollow",
+};
 export default async function EarningsPage({
   searchParams,
 }: {

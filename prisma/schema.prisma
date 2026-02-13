@@ -52,12 +52,14 @@ model Profile {
   id          String       @id @default(cuid())
   userId      String       @unique
   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isOnline  Boolean  @default(false) 
+  lastSeen  DateTime @default(now())
   
   title       String?
   languages   String[]     @default([])
   about       String?      @db.Text
   location    String?
-  image       String?      // This acts as the Avatar
+  image       String?      
   
   gigs        Gig[]
   experiences Experience[]
@@ -314,14 +316,23 @@ model Notification {
 // ==========================================
 
 model PayoutMethod {
-  id          String   @id @default(cuid())
-  userId      String   @unique
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
-  type        String   // "BANK", "PAYPAL", "STRIPE"
-  details     String   // Encrypted email or account number
-  provider    String?  // e.g., "Chase", "PayPal Inc"
+  type      PayoutProvider 
   
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  details   String   // Encrypted email, BSB/Account, or Stripe ID
+  provider  String?  // e.g., "CommBank", "ANZ", "PayPal"
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum PayoutProvider {
+  BANK
+  PAYPAL
+  STRIPE
+  WISE
+  PAYONEER
 }

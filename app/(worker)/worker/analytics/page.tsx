@@ -14,7 +14,13 @@ import {
   AlertCircle,
   ArrowUpRight 
 } from "lucide-react";
+import { Metadata } from "next";
 
+export const metadata: Metadata = {
+  title: "Performance Analytics | Growth Metrics",
+  description: "Deep dive into your sales data, conversion rates, and profile visibility trends.",
+  robots: "noindex, nofollow",
+};
 export default async function AnalyticsPage() {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/");

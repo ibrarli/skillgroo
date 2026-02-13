@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { ReactNode } from "react";
-import { Loader2, Edit2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 interface IconButtonProps {
   text?: string;
-  icon?: ReactNode; // can be a component or JSX
+  icon?: ReactNode;
   href?: string;
   onClick?: () => void;
   className?: string;
@@ -27,7 +27,18 @@ export default function IconButton({
     <button
       onClick={onClick}
       disabled={loading || disabled}
-      className={`flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-neutral-800 text-sm font-medium hover:bg-black hover:text-neutral-500 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
+      /* - Changed rounded-lg to rounded-xl
+         - Replaced bg-primary with adaptive bg-white/dark shade
+         - Added border for better definition in dark mode
+      */
+      className={`
+        flex items-center gap-2 px-4 py-2 rounded-xl transition cursor-pointer 
+        disabled:opacity-50 disabled:cursor-not-allowed
+        bg-white border border-neutral-200 text-neutral-800 hover:bg-neutral-50
+        dark:bg-neutral-900 dark:border-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-800
+        text-sm font-bold shadow-sm active:scale-95
+        ${className}
+      `}
     >
       {loading ? (
         <Loader2 className="animate-spin" size={18} />

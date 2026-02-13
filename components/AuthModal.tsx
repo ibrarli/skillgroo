@@ -45,6 +45,18 @@ export default function AuthModal() {
         setError("Invalid credentials");
         setLoading(false);
       } else {
+        // --- NEW: AUTO-ONLINE ON SUCCESSFUL LOGIN ---
+        try {
+          const statusData = new FormData();
+          statusData.append("isOnline", "true");
+          await fetch("/api/profile", {
+            method: "PATCH",
+            body: statusData,
+          });
+        } catch (err) {
+          console.error("Auto-online failed", err);
+        }
+        // --------------------------------------------
         window.location.reload();
       }
     } else {
@@ -107,7 +119,6 @@ export default function AuthModal() {
       </button>
 
       {open && (
-        // Added top-0 left-0 and w-screen h-screen to be safe
         <div className="fixed inset-0 top-0 left-0 w-screen h-screen flex items-center justify-center bg-black/60 backdrop-blur-md z-[9999] p-4">
           <div className="bg-neutral-950 border border-white/10 rounded-[2.5rem] w-full max-w-4xl overflow-hidden flex flex-col md:flex-row shadow-2xl animate-in zoom-in duration-300">
             {/* Left Section: Visual */}
