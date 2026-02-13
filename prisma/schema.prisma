@@ -13,29 +13,30 @@ datasource db {
 // ==========================================
 
 model User {
-  id                  String         @id @default(cuid())
-  username            String         @unique
-  name                String?
-  email               String         @unique
-  password            String
-  role                Role           @default(CUSTOMER)
-  createdAt           DateTime       @default(now())
-  notificationsEnabled Boolean       @default(true)
+  id                   String         @id @default(cuid())
+  username             String         @unique
+  name                 String?
+  email                String         @unique
+  password             String
+  role                 Role           @default(CUSTOMER)
+  createdAt            DateTime       @default(now())
+  notificationsEnabled Boolean        @default(true)
 
   // Relations
   profile             Profile?
   earnings            Earnings?
+  payoutMethod        PayoutMethod?   // Added relation to PayoutMethod
   transactions        Transaction[]
   notifications       Notification[]
   
   // Orders
   customerOrders      Order[]        @relation("CustomerOrders")
   providerOrders      Order[]        @relation("ProviderOrders")
-  reviewsGiven Review[]
+  reviewsGiven        Review[]
   
   // Proposals
   proposalsSent       Proposal[]     @relation("CustomerProposals")
-  proposalsReceived   Proposal[]     @relation("ProviderProposals")
+  proposalsReceived    Proposal[]     @relation("ProviderProposals")
 }
 
 enum Role {
@@ -264,7 +265,6 @@ model Review {
   createdAt          DateTime @default(now())
 }
 
-// NEW MODEL: Stores the delivery data submitted by the worker
 model OrderProof {
   id           String   @id @default(cuid())
   orderId      String   @unique
@@ -307,4 +307,21 @@ model Notification {
   link      String?  
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+// ==========================================
+// PAYOUT METHOD (NEW)
+// ==========================================
+
+model PayoutMethod {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  type        String   // "BANK", "PAYPAL", "STRIPE"
+  details     String   // Encrypted email or account number
+  provider    String?  // e.g., "Chase", "PayPal Inc"
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

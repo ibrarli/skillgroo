@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { X, Banknote, Loader2, CheckCircle2 } from "lucide-react";
+import { X, Banknote, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 
 interface WithdrawModalProps {
   balance: number;
+  disabled?: boolean; // New prop included
 }
 
-export default function WithdrawModal({ balance }: WithdrawModalProps) {
+export default function WithdrawModal({ balance, disabled = false }: WithdrawModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
@@ -16,6 +17,8 @@ export default function WithdrawModal({ balance }: WithdrawModalProps) {
 
   const handleWithdraw = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (disabled) return; // Guard clause
+    
     setLoading(true);
     setError("");
 
@@ -40,7 +43,7 @@ export default function WithdrawModal({ balance }: WithdrawModalProps) {
           setIsOpen(false);
           setSuccess(false);
           setAmount("");
-          window.location.reload(); // Refresh to update balance
+          window.location.reload(); 
         }, 2000);
       } else {
         const data = await res.json();
@@ -56,8 +59,13 @@ export default function WithdrawModal({ balance }: WithdrawModalProps) {
   return (
     <>
       <button
-        onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-2xl font-black shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
+        onClick={() => !disabled && setIsOpen(true)}
+        disabled={disabled}
+        className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-black transition-all
+          ${disabled 
+            ? "bg-neutral-200 dark:bg-neutral-800 text-neutral-400 cursor-not-allowed opacity-70" 
+            : "bg-primary text-white shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95"
+          }`}
       >
         <Banknote size={20} />
         Withdraw Funds
@@ -65,13 +73,11 @@ export default function WithdrawModal({ balance }: WithdrawModalProps) {
 
       {isOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          {/* Backdrop */}
           <div 
             className="absolute inset-0 bg-neutral-950/60 backdrop-blur-md" 
             onClick={() => !loading && setIsOpen(false)} 
           />
 
-          {/* Modal Content */}
           <div className="relative w-full max-w-md bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-[2.5rem] p-8 shadow-2xl overflow-hidden">
             {success ? (
               <div className="py-10 text-center space-y-4">
@@ -94,6 +100,14 @@ export default function WithdrawModal({ balance }: WithdrawModalProps) {
                 </div>
 
                 <form onSubmit={handleWithdraw} className="space-y-6">
+                  {/* Warning for disabled state (extra safety) */}
+                  {disabled && (
+                    <div className="flex items-center gap-3 p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-amber-600 dark:text-amber-500">
+                      <AlertCircle size={18} />
+                      <p className="text-[10px] font-black uppercase tracking-tight">Add a payout method first</p>
+                    </div>
+                  )}
+
                   <div>
                     <div className="flex justify-between mb-2">
                       <label className="text-xs font-black text-neutral-400 uppercase tracking-widest">Amount to Withdraw</label>
@@ -104,10 +118,11 @@ export default function WithdrawModal({ balance }: WithdrawModalProps) {
                       <input
                         type="number"
                         required
+                        disabled={disabled}
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
                         placeholder="0.00"
-                        className="w-full bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700 p-4 pl-10 rounded-2xl outline-none focus:ring-2 focus:ring-primary font-black text-xl"
+                        className="w-full bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700 p-4 pl-10 rounded-2xl outline-none focus:ring-2 focus:ring-primary font-black text-xl disabled:opacity-50"
                       />
                     </div>
                     {error && <p className="text-red-500 text-xs font-bold mt-2">{error}</p>}
@@ -121,8 +136,8 @@ export default function WithdrawModal({ balance }: WithdrawModalProps) {
                   </div>
 
                   <button
-                    disabled={loading || !amount || parseFloat(amount) <= 0}
-                    className="w-full bg-primary text-white py-4 rounded-2xl font-black text-lg shadow-xl shadow-primary/20 hover:opacity-90 disabled:opacity-50 disabled:scale-100 transition-all flex items-center justify-center gap-2"
+                    disabled={loading || disabled || !amount || parseFloat(amount) <= 0}
+                    className="w-full bg-primary text-white py-4 rounded-2xl font-black text-lg shadow-xl shadow-primary/20 hover:opacity-90 disabled:opacity-50 disabled:bg-neutral-400 disabled:shadow-none disabled:scale-100 transition-all flex items-center justify-center gap-2"
                   >
                     {loading ? <Loader2 className="animate-spin" /> : "Confirm Payout"}
                   </button>

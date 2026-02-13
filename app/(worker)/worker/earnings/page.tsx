@@ -8,6 +8,7 @@ import StatCard from "@/components/worker/analytics/StatCard";
 import TransactionTable from "@/components/worker/analytics/TransactionTable";
 import WithdrawModal from "@/components/worker/earnings/WithdrawModal";
 import EarningFilters from "@/components/worker/earnings/EarningFilters";
+import PayoutMethodModal from "@/components/worker/earnings/PayoutMethodModal"; // New Import
 import { Wallet, ArrowUpRight, Clock, Banknote, Activity } from "lucide-react";
 
 export default async function EarningsPage({
@@ -20,10 +21,16 @@ export default async function EarningsPage({
 
   const timeframe = searchParams.timeframe || "all";
   const now = new Date();
-  const COMMISSION_FACTOR = 0.9; // Platform takes 10%
+  const COMMISSION_FACTOR = 0.9; 
   
   const tenDaysAgo = new Date();
   tenDaysAgo.setDate(tenDaysAgo.getDate() - 10); 
+
+  // Check if user has a payout method configured
+  const payoutMethod = await prisma.payoutMethod.findUnique({
+    where: { userId: session.user.id },
+  });
+  const hasPayoutMethod = !!payoutMethod;
 
   const settleFunds = async () => {
     const clearableOrders = await prisma.order.findMany({
@@ -109,7 +116,6 @@ export default async function EarningsPage({
   });
 
   return (
-    /* Updated bg-neutral-50 dark:bg-neutral-950 to bg-background */
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans transition-colors duration-300">
       <Header />
       <div className="flex flex-1">
@@ -117,7 +123,6 @@ export default async function EarningsPage({
         <main className="flex-1 ml-24 p-8 pt-24">
           <div className="max-w-full mx-auto space-y-10">
             
-            {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-end gap-6">
               <div>
                 <h1 className="text-4xl font-bold text-foreground">Finances</h1>
@@ -127,11 +132,13 @@ export default async function EarningsPage({
               </div>
               <div className="flex items-center gap-4">
                 <EarningFilters />
-                <WithdrawModal balance={earnings.totalBalance} />
+                {/* Dynamic Button based on existence of payout method */}
+                <PayoutMethodModal isEdit={hasPayoutMethod} />
+                {/* Withdraw button is disabled if no payout method exists */}
+                <WithdrawModal balance={earnings.totalBalance} disabled={!hasPayoutMethod} />
               </div>
             </div>
 
-            {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
               <StatCard 
                 title="Active Orders" 
@@ -166,7 +173,6 @@ export default async function EarningsPage({
               />
             </div>
 
-            {/* Transactions Ledger Card */}
             <div className="bg-background border-2 border-foreground/10 rounded-[3rem] overflow-hidden shadow-xl shadow-foreground/[0.02]">
               <div className="p-8 border-b border-foreground/10 flex justify-between items-center">
                 <h2 className="text-xl font-black uppercase tracking-tighter text-foreground">Transaction Ledger</h2>

@@ -44,9 +44,9 @@ export default function Sidebar() {
               group relative w-20 flex cursor-pointer flex-col items-center justify-center py-4 rounded-2xl transition-all duration-200
               ${
                 isActive
-                  ? "bg-primary text-white shadow-lg shadow-primary/25"
+                  ? "bg-neutral-900 text-white shadow-lg shadow-primary/25"
                   : "text-neutral-500 hover:bg-foreground/5 hover:text-foreground"
-              }
+              }s
               `}
             >
               {/* Icon */}
